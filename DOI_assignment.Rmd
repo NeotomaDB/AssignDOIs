@@ -1,0 +1,277 @@
+---
+title: DOI workflow
+author: Simon Goring
+date: May 22, 2016
+output: 
+  html_document:
+    theme: journal
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    code_folding: show
+    highlight: pygment
+---
+
+```{r, echo=FALSE, message = FALSE, warnings=FALSE}
+library(RMySQL, quietly = TRUE, verbose = FALSE)
+library(httr, quietly = TRUE, verbose = FALSE)
+library(XML, quietly = TRUE, verbose = FALSE)
+
+source('sql_calls.R')
+
+con <- dbConnect(MySQL(),
+                 user = 'root', 
+                 dbname = 'neotoma', 
+                 password = 'c@mpf1re', 
+                 host = 'localhost')
+
+datacite <- 'https://ezid.cdlib.org/'
+
+schema <- xmlSchemaParse('data/metadata.xsd')
+
+```
+
+# Use Case
+
+Currently the Neotoma Paleoecological Database ([http://neotomadb.org]()) has no established system for minting DOIs for records within the database.  Given the database structure, discussed in detail [here](http://neotoma-manual.readthedocs.io/en/latest/), there is no natural single DB table, but there is a data construct that mirrors (to some degree) the concept of a complete dataset, the existing Neotoma API `download` structure (*e.g.*, [http://api.neotomadb.org/v1/downloads/14196]()).  This object will be the atomic unit for DOI assignment and we will refer to it as a "dataset" in this document, although a second API service exists that refers to "datasets". The API "dataset" service excludes count or sample data for a site, and as such doesn't serve our needs for the assignment of DOIs.
+
+Neotoma, in establishing a DOI service, has two main use cases.  Pre-existing records and records that will be provided to Neotoma as a set of datasets (either the inclusion of a new Constituent Database, or as the result of a data synthesis project) will require the bulk assignment records, we refer to this as "Serial Assignment". The second use case occurs when new records are uploaded individually through Tilia ([http://tiliait.com]()) or a data upload web service (in development), we will refer to these as "Unique Assignment".  For each of these two use cases the process is generally the same for the actual call to DataCite/EZID, but the wrapping within the workflow will differ.
+
+## Serial Assignment
+
+Serial assignment of DOIs occurs when we first assign DOIs to all Neotoma records, and when a new constituent database, or large sets of datasets are uploaded to Neotoma.  This process is (likely) triggered manually, or it could be applied to a set of unique dataset IDs.  This process could also work by simply polling Neotoma each day for `Datasets` without DOI assignments, but we want to be able to provide the DOI quickly when people submit their records.
+
+The process is:
+
+* Data are added to Neotoma (with empty dataset DOI field)
+* The script run through each dataset with an unassigned DOI
+* A landing page is created programmatically.
+* The script calls out to DataCite/EZID & generates a DOI and assigns metadata
+* The DOI returned from DataCite is attached to the `Datasets` table
+* An email is sent to the Dataset PI with the dataset DOI & metadata, and to the relevant steward - **this system needs to be set up as well**
+
+## Unique Assignment
+
+Unique assignment of a DOI occurs at data upload whether from Tilia, or directly into Neotoma through another portal.
+
+The process is:
+
+* Data are added to Neotoma (with empty dataset DOI field)
+* A landing page is created programmatically.
+* The script calls out to DataCite/EZID & generates a DOI and assigns metadata
+* The DOI returned from DataCite is attached to the `Datasets` table
+* Either:
+  * The DOI is attached to the "Success" object and returned as part of the process
+  * Or, the application polls Neotoma again with the new dataset ID and recieves the DOI.
+* An email is sent to the Dataset PI and to the steward.
+
+# Outstanding Issues
+
+## DOI Metadata:
+
+### SQL:
+
+To fill in the metadata fields we need to generate a few separate calls.  Here we will use a dataset ID of `1001`, a record for Hail Lake.
+
+```{r, results='hide'}
+# Building the XML document:
+
+dataset <- 1001
+
+doc <- newXMLDoc()
+
+root <- newXMLNode('resource', 
+                    namespaceDefinitions = c("http://datacite.org/schema/kernel-3",
+                             "xsi" = "http://www.w3.org/2001/XMLSchema-instance"),
+                    attrs = c("xsi:schemaLocation" = "http://datacite.org/schema/kernel-3 http://schema.datacite.org/meta/kernel-3/metadata.xsd"), doc = doc)
+
+```
+
+I'm trying to build this in the same way as the DataCite Document is laid out so that we can follow along.  I've wrapped the SQL queries into functions so we can push them out into a broader function, one that uses the dataset number as the key parameter.
+
+```{r, results = 'hide', message = FALSE, warning = FALSE}
+default <- dbGetQuery(con, statement = default_call(dataset))
+
+# Clean the affiliation:
+default$affiliation <- gsub('\r\n', ', ', default$affiliation)
+
+# This is the empty shoulder for assigning DOIs:
+newXMLNode("indentifier", '10.5072/FK2', 
+           attrs = c('identifierType' = 'DOI'), parent = root)
+
+# This creator stuff is just done one at a time. . . 
+
+newXMLNode("creators", parent = root)
+
+lapply(1:nrow(default),
+       function(x) {
+         addChildren(root[["creators"]], newXMLNode("creator",
+                    .children = list(newXMLNode("creatorName",
+                                                default$creatorName[x]),
+                                     newXMLNode("affiliation",
+                                                default$affiliation[x]))))
+        })
+
+# Now on to '3':
+newXMLNode("titles", parent = root)
+newXMLNode("title", 
+           default$SiteName[1],
+           attrs = c("titleType" = "Title", "xml:lang" = "en-us"),
+           parent = root[["titles"]])
+
+# Number 4:
+newXMLNode("publisher", "Neotoma Paleoecological Database", parent = root)
+
+# Number 5:
+newXMLNode("publicationYear", format(Sys.Date(), "%Y"), parent = root)
+```
+
+Some considerations:
+
+1. Is there ever more than one "creator" for a dataset?  Right now I'm giving the datasetPI
+
+Those were fairly straightforward.  The Subject and subject scheme information could use some work & reflection.  I'll boot on it for now.
+
+The contributor information comes from the Contact tables for the record.  There is a query (in `sql_calls.R`) that pulls in contributor information.  Right now we are not tagging the name identifiers, but we could do this if we want (although it's not supported in the database).  **A question for DataCite**: is it's okay to have people listed with multiple roles, and what does a "co-author" get tagged as.
+
+```{r results='as-is', echo=FALSE}
+contacts <- dbGetQuery(con, statement = contributor_call(dataset))
+
+contacts$affiliation <- gsub('\r\n', ', ', contacts$affiliation)
+knitr::kable(contacts)
+```
+
+```{r, results='hide'}
+
+# The contributors come from the DB call.  This duplicates 
+newXMLNode("contributors", parent = root)
+lapply(1:nrow(contacts), 
+       function(x) { 
+         newXMLNode("contributor", 
+                    attrs = c("contributorType" = contacts$contributorType[x]),
+                    .children = list(newXMLNode("contributorName", 
+                                                contacts$creatorName[x])), parent = root[["contributors"]])
+         })
+```
+
+Adding the date fields uses an `lapply` comment on a date query (found in the SQL query in `sql_calls.R`).
+
+```{r results='as-is', echo = FALSE}
+dates   <- dbGetQuery(con, statement = date_call(dataset))
+knitr::kable(dates)
+```
+
+```{r, results='hide'}
+# Adding the dates in one at a time, we use the lapply to insert them
+# into the `dates` node.
+newXMLNode("dates", parent = root)
+lapply(1:nrow(dates), 
+       function(x) { 
+         newXMLNode("date", 
+                    format(as.Date(dates[1,1]), "%Y-%m-%d"), 
+                           attrs = c("dateType" = dates[x,2]), 
+                    parent = root[["dates"]]) 
+         } )
+
+```
+
+
+```{r, echo = TRUE, results='hide'}
+# Number 9:
+newXMLNode("language", "English", parent = root)
+
+# Number 10:
+newXMLNode("resourceType", "Dataset/Paleoecological Sample Data", 
+           attrs = c("resourceTypeGeneral" = "Dataset"), parent = root)
+
+```
+
+I haven't stuck in the alternate identifiers, but we can add these in.  Most likely this will be sample IGSNs, &cetera.  We can figure this out at some point.
+
+`RelatedIdentifiers` should be DOIs.  This needs to be implemented.
+
+`Size` needs to be implemented.
+
+```{r, results='hide'}
+# Number 14:
+newXMLNode("formats", parent = root)
+newXMLNode("format", "XML", parent = root[["formats"]])
+newXMLNode("format", "TLX", parent = root[["formats"]])
+newXMLNode("format", "JSON", parent = root[["formats"]])
+```
+
+`Version` Needs to be implemented.  What is our decision?
+
+```{r, results='hide'}
+# Number 16
+
+addChildren(newXMLNode("rightsList", parent = root),
+           children = newXMLNode("rights", "CC-BY4", 
+           attrs = c("rightsURI" = "http://creativecommons.org/licenses/by/4.0/deed.en_US")))
+
+saveXML(doc = doc, 
+        file = paste0('data/datasets/', dataset, '_output.xml'),
+        prefix = '<?xml version="1.0" encoding="UTF-8"?>')
+```
+
+`Description` and `DescriptionType`, not sure what to put here.  It's supposed to be technical information & best practice to supply a Description.  Do we use site description, something else?
+
+`GeoLocation`  Needs to be implemented.  I can figure out if it's a box or point based on the query.  Then that's it!
+
+
+```{r}
+xmlSchemaValidate('data/metadata.xsd', doc)
+```
+
+So, the schema doesn't validate properly, but:
+
+```{r}
+
+urlbase = 'https://ezid.cdlib.org/'
+
+parse_doc <- gsub('\\n', '', paste0('datacite: ',
+                         saveXML(xmlParse(paste0('data/datasets/', 
+                                                 dataset, '_output.xml')))))
+parse_doc <- gsub('\\"', "'", parse_doc)
+
+```
+
+```{r}
+
+r = POST(url = paste0(urlbase, 'shoulder/doi:10.5072/FK2'), 
+	       authenticate(user = 'apitest', password = 'apitest'),
+         add_headers(c('Content-Type' = 'text/plain; charset=UTF-8',
+                       'Accept' = 'text/plain')),
+	       body = parse_doc,
+	                   format = 'xml')
+
+out_doi <- substr(content(r), 
+                  regexpr("doi:", content(r)), 
+                  regexpr("\\s\\|", content(r)) - 1)
+
+content(r)
+```
+
+This then gives us a DOI `r out_doi` that we can check.
+
+## Landing Page
+
+Since we are not going directly to the data itself we'd like to understand what exactly is required of a landing page for a dataset (or what is preferred).
+
+## DOI Assignment
+
+## Updating Records
+
+In cases where a data set is updated Neotoma still directly modifies the record.  This will (or may) change.  Now that we can build the XML okay we should be able to modify the DOI metadata using:
+
+```{r eval=FALSE}
+r = POST(url = paste0(urlbase, paste0('identifier/', out_doi), 
+	       authenticate(user = 'apitest', password = 'apitest'),
+         add_headers(c('Content-Type' = 'text/plain; charset=UTF-8',
+                       'Accept' = 'text/plain')),
+	       body = paste0('datacite: ',paste(readLines(paste0('data/datasets/', 
+                dataset,  '_output.xml')), collapse = " ")),
+	                   format = 'xml')
+```
+
+where `r paste0('data/datasets/', dataset, '_output.xml')` then represents the new, modified, XML document for the record.

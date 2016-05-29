@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resource xsi:schemaLocation="http://datacite.org/schema/kernel-3 http://schema.datacite.org/meta/kernel-3/metadata.xsd" xmlns="http://datacite.org/schema/kernel-3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <identifier identifierType="DOI">(:tba)</identifier>
+  <creators>
+    <creator>
+      <creatorName>Labelle, Claude</creatorName>
+      <affiliation>1804 Tupper No. 2, Montreal, PQ H3H 1N4, CANADA</affiliation>
+    </creator>
+    <creator>
+      <creatorName>Larouche, Alayn C.</creatorName>
+      <affiliation>Laboratoire Jacques-Rousseau, Département de géographie, Université de Montréal, C.P. 6128 Succursale A, Montréal, PQ H3C 3J7, CANADA</affiliation>
+    </creator>
+    <creator>
+      <creatorName>Richard, Pierre J. H.</creatorName>
+      <affiliation>Laboratoire De Paleobiogeog. et du Palynol., Département de géographie, Université de Montréal, C.P. 6128, Succ. Centre-ville, Montréal PQ H3C 3J7, CANADA</affiliation>
+    </creator>
+  </creators>
+  <Publisher>Neotoma Paleoecological Database</Publisher>
+  <PublicationYear>2016-05-27</PublicationYear>
+  <Contributors>
+    <Contributor>
+      <ContributorName contributorType="Researcher">Duvall, Mathieu L.</ContributorName>
+    </Contributor>
+    <Contributor>
+      <ContributorName contributorType="Collector">Cwynar, Les C.</ContributorName>
+    </Contributor>
+    <Contributor>
+      <ContributorName contributorType="ProjectLeader">Cwynar, Les C.</ContributorName>
+    </Contributor>
+    <Contributor>
+      <ContributorName contributorType="DataCurator">Grimm, Eric Christopher</ContributorName>
+    </Contributor>
+    <Contributor>
+      <ContributorName contributorType="Researcher">Spear, Ray W.</ContributorName>
+    </Contributor>
+    <Contributor>
+      <ContributorName contributorType="Researcher">Cwynar, Les C.</ContributorName>
+    </Contributor>
+    <Contributor>
+      <ContributorName contributorType="Analyst">Cwynar, Les C.</ContributorName>
+    </Contributor>
+  </Contributors>
+  <Dates>
+    <Date dateType="Submitted">1998-07-05</Date>
+    <Date dateType="Submitted">1998-07-05</Date>
+    <Date dateType="Created">1998-07-05</Date>
+    <Date dateType="Updated">1998-07-05</Date>
+  </Dates>
+  <Language>English</Language>
+  <ResourceType resourceTypeGeneral="Dataset">Dataset/Paleoecological Sample Data</ResourceType>
+  <Formats>
+    <Format>XML</Format>
+    <Format>TLX</Format>
+    <Format>JSON</Format>
+  </Formats>
+  <Rights rightsURI="http://creativecommons.org/licenses/by/4.0/deed.en_US">CC-BY4</Rights>
+</resource>

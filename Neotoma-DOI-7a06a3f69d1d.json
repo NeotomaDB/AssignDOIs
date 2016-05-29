@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "neotoma-doi",
+  "private_key_id": "7a06a3f69d1da0492a6ac9724f75d5b11b2ab57e",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCKpZXvBfUHH94S\n9BuBHxxfB0VBAJRT6C/pRppNo6Rv8QbnURauFslixCbKIHoPg9z5QBZHTZdPdgHx\nmepI8qngpQosU1Nacz2tB9eWtaI+X1IVMbYLAuskMrWPEAJg11BZDf7J0x8F00Vt\n8cLnjajZy2rdFfpIOkSjt64Y2kCN9qLZQBXtX9w5cDV1cqQz9nVUIqBpik0vjltJ\nCd3mcGjMedBJaqLPCXcLknCmIGsbgdBk/rJ1sxomxFqX8RPqbb/KKiK+mdt3XCAb\nmxgtvKx7vCDOTOf/4T4KiCljiWd9Qf+1xQ80+fFCPeHqFxeIOcfNsnFvjJqsOXTi\n7Y265PvLAgMBAAECggEAKYFGcCaFYpucnGntLetFUAFaLwpgXPn+FcRn/uQFHum1\nmlvBAV6a7PExd4LfZ3OfHBKeWLwWltgJ3uynoSzbw/9EG17abhJfnUPiuyAmsKtS\nZDvcdlFqWQzBI1G0lI8AY5h39K059UF44F/ma/ERYhmuJP8mTKb801HyUUhM2PJR\nzpn0JTexsD4EHnK0ImHd+lrzxmVVByZpLCkwD5hSOtJysblIar3axdp/l8DbeTzb\n/SceOltyEuWF+KMbZZ+duKKoKj2sgG/Sa+XmNVmgOcjSvqFoVsgdMCcJpBnPWocK\nCwjppQor9Qeiy8NBIr6Ge7mQTGqEk3tOktkyPnKuOQKBgQDUtWw3/Ewi9ZUeoLk8\n4u2w+3NVxHYak5KddKJMOYDWihGg0x5tcyHvqa6MP0udeR9JqOsEZpjG33RvhmTm\n2x4ivbWQm+ZrJkHCtTVWMu0tBA4AEXWW9EtIz3mjsLG++xT/iM02GB2polQxgIfV\nAA6E8WBY6Nfqm52uPC4jxRqqZwKBgQCm3WGn9R/Le1DtGHYyISIGOcy25CrYMH8c\nQTmYlMB335F23+0by+jrFyGh2cUxtzS/uw7EyI2uoI6APN4o5pzAjPCS9X1eaaf7\nnhxYVdA/Sgx2UT2UI3jIHkgburRvJ9Xa17xFwXvTIyx8rr4UWl93LqFnnSbZjzG6\nv8B04uxM/QKBgQCDqKwMV0D1HpcndwpRMpE3S9zOyKTlvFQy27+deLZTlPBmYGbk\nDjCCPMAKlR8DoLYKDOEzPyHvbt6OLVyFPDmB/XTFxomv5uUrVKhn62u8wla8GhJz\n1lBHCAzdkf/jG1ya8p06j2DE3/JHFax93eQey5z8S1tiHuJRt3RDtbvUnwKBgQCg\nFZ+M3RQFyWbYMDGk4jicNHN7uuaHxe8Mkl7JTVxhJLGPlEEL+9KXR/fSKPSQP61x\ni+odTDLxJ8POr5aLMsOLzys2MiJ2o3KvaP7UmG9TaJ0QHdyv9F/5zWNshvB3+4Wl\nkHdljLxY0VPqwlJFgHY6Bxh+KTyOWFxjR3dCLDp7mQKBgEifwhiBleQovaHSQ9S2\nJRcq+wHzJNkhrX+jPUb0SLBaCOCpvKdL9IO8rV2qpJ7bwiG8uz/Sh3Ocn4th5+ql\nvS0wfWhIxDNu5E+/lcYrQQaoFuiC4SJd5yvdVyOcYQ3hhuM6lDWPVzQYWY0XQ9YT\n4u6ItlsrKsCJrs0nae1Sk5FZ\n-----END PRIVATE KEY-----\n",
+  "client_email": "neotoma@neotoma-doi.iam.gserviceaccount.com",
+  "client_id": "100395582425093419745",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://accounts.google.com/o/oauth2/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/neotoma%40neotoma-doi.iam.gserviceaccount.com"
+}
