@@ -1,18 +1,24 @@
-<?xml version="1.0"?>
-<resource xmlns="http://datacite.org/schema/kernel-3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-3 http://schema.datacite.org/meta/kernel-3/metadata.xsd">
-  <indentifier identifierType="DOI">10.5072/FK2</indentifier>
-  <creators>
+<?xml version="1.0" encoding="UTF-8"?>
+<resource xsi:schemaLocation="http://datacite.org/schema/kernel-3 
+http://schema.datacite.org/meta/kernel-3/metadata.xsd" 
+xmlns="http://datacite.org/schema/kernel-3" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <identifier identifierType="DOI">10.5072/FK2</identifier>
+    <creators>
     <creator>
       <creatorName>Cwynar, Les C.</creatorName>
       <affiliation>Department of Biology, University of New Brunswick, Bag Service Number 45111, Fredericton, NB E3B 6E1, CANADA</affiliation>
     </creator>
   </creators>
-  <titles>
-    <title titleType="Title" xml:lang="en-us">Hail Lake pollen dataset</title>
+      <titles>
+    <title xml:lang="en-us">Hail Lake pollen dataset</title>
   </titles>
-  <publisher>Neotoma Paleoecological Database</publisher>
-  <publicationYear>2016</publicationYear>
-  <contributors>
+    <publisher>Neotoma Paleoecological Database</publisher>
+    <publicationYear>2014</publicationYear>
+    <subjects>
+        <subject xml:lang="en-us" schemeURI="http://dewey.info/" subjectScheme="dewey">000 computer science</subject>
+    </subjects>
+    <contributors>
     <contributor contributorType="Researcher">
       <contributorName>Duvall, Mathieu L.</contributorName>
     </contributor>
@@ -31,10 +37,7 @@
     <contributor contributorType="Researcher">
       <contributorName>Cwynar, Les C.</contributorName>
     </contributor>
-    <contributor contributorType="Analyst">
-      <contributorName>Cwynar, Les C.</contributorName>
-    </contributor>
-  </contributors>
+    </contributors>
   <dates>
     <date dateType="Submitted">1998-07-05</date>
     <date dateType="Submitted">1998-07-05</date>
@@ -51,4 +54,4 @@
   <rightsList>
     <rights rightsURI="http://creativecommons.org/licenses/by/4.0/deed.en_US">CC-BY4</rights>
   </rightsList>
-</resource>
+  </resource>
