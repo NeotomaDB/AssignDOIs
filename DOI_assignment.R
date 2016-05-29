@@ -1,4 +1,4 @@
-## ---- echo=FALSE, message = FALSE, warnings=FALSE------------------------
+
 library(RMySQL, quietly = TRUE, verbose = FALSE)
 library(httr, quietly = TRUE, verbose = FALSE)
 library(XML, quietly = TRUE, verbose = FALSE)
@@ -36,7 +36,7 @@ default <- dbGetQuery(con, statement = default_call(dataset))
 default$affiliation <- gsub('\r\n', ', ', default$affiliation)
 
 # This is the empty shoulder for assigning DOIs:
-newXMLNode("indentifier", '10.5072/FK2', 
+newXMLNode("identifier", '10.5072/FK2', 
            attrs = c('identifierType' = 'DOI'), parent = root)
 
 # This creator stuff is just done one at a time. . . 
@@ -56,7 +56,7 @@ lapply(1:nrow(default),
 newXMLNode("titles", parent = root)
 newXMLNode("title", 
            default$SiteName[1],
-           attrs = c("titleType" = "Title", "xml:lang" = "en-us"),
+           attrs = c("xml:lang" = "en-us"),
            parent = root[["titles"]])
 
 # Number 4:
@@ -110,6 +110,10 @@ newXMLNode("resourceType", "Dataset/Paleoecological Sample Data",
 
 
 ## ---- results='hide'-----------------------------------------------------
+# Number 13: size
+size <- as.numeric(object.size(GET(paste0("api.neotomadb.org/v1/downloads/", dataset))))
+newXMLNode("sizes", newXMLNode("size", paste0(ceiling(size/1000), " KB")), parent = root)
+
 # Number 14:
 newXMLNode("formats", parent = root)
 newXMLNode("format", "XML", parent = root[["formats"]])
@@ -148,8 +152,6 @@ r = POST(url = paste0(urlbase, 'shoulder/doi:10.5072/FK2'),
                        'Accept' = 'text/plain')),
 	       body = parse_doc,
 	                   format = 'xml')
-
-content(r)
 
 out_doi <- substr(content(r), 
                   regexpr("doi:", content(r)), 

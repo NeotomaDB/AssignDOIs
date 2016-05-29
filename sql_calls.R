@@ -24,7 +24,7 @@ UNION ALL SELECT ContactID, 'Researcher' AS contributorType
 FROM ((SELECT d.PublicationID FROM datasetpublications AS d
 WHERE d.datasetID = ", x, ") AS sds
 INNER JOIN publicationauthors AS paut ON sds.PublicationID = paut.PublicationID)
-UNION ALL SELECT DISTINCT ContactID, 'Analyst' AS contributorType
+UNION ALL SELECT DISTINCT ContactID, 'DataCollector' AS contributorType
 FROM ((SELECT samp.SampleID FROM samples AS samp
 WHERE samp.datasetID = ", x, ") AS sas INNER JOIN sampleanalysts AS sana ON sas.SampleID = sana.SampleID)) AS cids
 INNER JOIN contacts ON cids.ContactID = contacts.ContactID")

@@ -96,7 +96,7 @@ default <- dbGetQuery(con, statement = default_call(dataset))
 default$affiliation <- gsub('\r\n', ', ', default$affiliation)
 
 # This is the empty shoulder for assigning DOIs:
-newXMLNode("indentifier", '10.5072/FK2', 
+newXMLNode("identifier", '10.5072/FK2', 
            attrs = c('identifierType' = 'DOI'), parent = root)
 
 # This creator stuff is just done one at a time. . . 
@@ -116,7 +116,7 @@ lapply(1:nrow(default),
 newXMLNode("titles", parent = root)
 newXMLNode("title", 
            default$SiteName[1],
-           attrs = c("titleType" = "Title", "xml:lang" = "en-us"),
+           attrs = c("xml:lang" = "en-us"),
            parent = root[["titles"]])
 
 # Number 4:
@@ -188,11 +188,25 @@ newXMLNode("resourceType", "Dataset/Paleoecological Sample Data",
 
 I haven't stuck in the alternate identifiers, but we can add these in.  Most likely this will be sample IGSNs, &cetera.  We can figure this out at some point.
 
-`RelatedIdentifiers` should be DOIs.  This needs to be implemented.
+`RelatedIdentifiers` will point to the URL of the data example (and the api?): 
 
-`Size` needs to be implemented.
+```r
+newXMLNode("relatedIdentifiers", parent = root)
+newXMLNode("relatedIdentifier", paste0("api.neotomadb.org/v1/downloads/", dataset),
+  attrs = list(relatedIdentifierType="URL",
+               relatedMetadataScheme="json"),
+  parent = root[["relatedIdentifiers"]])
+newXMLNode("relatedIdentifier", paste0("http://sites.neotomadb.org/", dataset),
+  attrs = list(relatedIdentifierType="URL"),
+  parent = root[["relatedIdentifiers"]])
+```
+
 
 ```{r, results='hide'}
+# Number 13: size
+size <- as.numeric(object.size(GET(paste0("api.neotomadb.org/v1/downloads/", dataset))))
+newXMLNode("sizes", newXMLNode("size", paste0(ceiling(size/1000), " KB")), parent = root)
+
 # Number 14:
 newXMLNode("formats", parent = root)
 newXMLNode("format", "XML", parent = root[["formats"]])
@@ -218,12 +232,11 @@ saveXML(doc = doc,
 
 `GeoLocation`  Needs to be implemented.  I can figure out if it's a box or point based on the query.  Then that's it!
 
-
 ```{r}
 xmlSchemaValidate('data/metadata.xsd', doc)
 ```
 
-So, the schema doesn't validate properly, but:
+The schema now validates properly, we're happy about that, and so we push it to DataCite:
 
 ```{r}
 
@@ -262,7 +275,7 @@ Since we are not going directly to the data itself we'd like to understand what 
 
 ## Updating Records
 
-In cases where a data set is updated Neotoma still directly modifies the record.  This will (or may) change.  Now that we can build the XML okay we should be able to modify the DOI metadata using:
+In cases where a data set is updated, Neotoma still directly modifies the record.  This will (or may) change.  Now that we can build the XML okay we should be able to modify the DOI metadata using:
 
 ```{r eval=FALSE}
 r = POST(url = paste0(urlbase, paste0('identifier/', out_doi), 
@@ -274,4 +287,6 @@ r = POST(url = paste0(urlbase, paste0('identifier/', out_doi),
 	                   format = 'xml')
 ```
 
-where `r paste0('data/datasets/', dataset, '_output.xml')` then represents the new, modified, XML document for the record.
+where "`r paste0('data/datasets/', dataset, '_output.xml')`" represents the new, modified, XML document for the record.
+
+In this process, I think the best thing to do is some sort of incremental upgrade where the old XML is always retained.

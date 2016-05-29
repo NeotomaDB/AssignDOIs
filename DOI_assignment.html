@@ -238,7 +238,7 @@ root &lt;-<span class="st"> </span><span class="kw">newXMLNode</span>(<span clas
 default$affiliation &lt;-<span class="st"> </span><span class="kw">gsub</span>(<span class="st">'</span><span class="ch">\r\n</span><span class="st">'</span>, <span class="st">', '</span>, default$affiliation)
 
 <span class="co"># This is the empty shoulder for assigning DOIs:</span>
-<span class="kw">newXMLNode</span>(<span class="st">&quot;indentifier&quot;</span>, <span class="st">'10.5072/FK2'</span>, 
+<span class="kw">newXMLNode</span>(<span class="st">&quot;identifier&quot;</span>, <span class="st">'10.5072/FK2'</span>, 
            <span class="dt">attrs =</span> <span class="kw">c</span>(<span class="st">'identifierType'</span> =<span class="st"> 'DOI'</span>), <span class="dt">parent =</span> root)
 
 <span class="co"># This creator stuff is just done one at a time. . . </span>
@@ -258,7 +258,7 @@ default$affiliation &lt;-<span class="st"> </span><span class="kw">gsub</span>(<
 <span class="kw">newXMLNode</span>(<span class="st">&quot;titles&quot;</span>, <span class="dt">parent =</span> root)
 <span class="kw">newXMLNode</span>(<span class="st">&quot;title&quot;</span>, 
            default$SiteName[<span class="dv">1</span>],
-           <span class="dt">attrs =</span> <span class="kw">c</span>(<span class="st">&quot;titleType&quot;</span> =<span class="st"> &quot;Title&quot;</span>, <span class="st">&quot;xml:lang&quot;</span> =<span class="st"> &quot;en-us&quot;</span>),
+           <span class="dt">attrs =</span> <span class="kw">c</span>(<span class="st">&quot;xml:lang&quot;</span> =<span class="st"> &quot;en-us&quot;</span>),
            <span class="dt">parent =</span> root[[<span class="st">&quot;titles&quot;</span>]])
 
 <span class="co"># Number 4:</span>
@@ -314,7 +314,7 @@ default$affiliation &lt;-<span class="st"> </span><span class="kw">gsub</span>(<
 <tr class="odd">
 <td align="left">Cwynar, Les C.</td>
 <td align="left">Department of Biology, University of New Brunswick, Bag Service Number 45111, Fredericton, NB E3B 6E1, CANADA</td>
-<td align="left">Analyst</td>
+<td align="left">DataCollector</td>
 </tr>
 </tbody>
 </table>
@@ -371,9 +371,20 @@ default$affiliation &lt;-<span class="st"> </span><span class="kw">gsub</span>(<
 <span class="kw">newXMLNode</span>(<span class="st">&quot;resourceType&quot;</span>, <span class="st">&quot;Dataset/Paleoecological Sample Data&quot;</span>, 
            <span class="dt">attrs =</span> <span class="kw">c</span>(<span class="st">&quot;resourceTypeGeneral&quot;</span> =<span class="st"> &quot;Dataset&quot;</span>), <span class="dt">parent =</span> root)</code></pre></div>
 <p>I haven’t stuck in the alternate identifiers, but we can add these in. Most likely this will be sample IGSNs, &amp;cetera. We can figure this out at some point.</p>
-<p><code>RelatedIdentifiers</code> should be DOIs. This needs to be implemented.</p>
-<p><code>Size</code> needs to be implemented.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Number 14:</span>
+<p><code>RelatedIdentifiers</code> will point to the URL of the data example (and the api?):</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">newXMLNode</span>(<span class="st">&quot;relatedIdentifiers&quot;</span>, <span class="dt">parent =</span> root)
+<span class="kw">newXMLNode</span>(<span class="st">&quot;relatedIdentifier&quot;</span>, <span class="kw">paste0</span>(<span class="st">&quot;api.neotomadb.org/v1/downloads/&quot;</span>, dataset),
+  <span class="dt">attrs =</span> <span class="kw">list</span>(<span class="dt">relatedIdentifierType=</span><span class="st">&quot;URL&quot;</span>,
+               <span class="dt">relatedMetadataScheme=</span><span class="st">&quot;json&quot;</span>),
+  <span class="dt">parent =</span> root[[<span class="st">&quot;relatedIdentifiers&quot;</span>]])
+<span class="kw">newXMLNode</span>(<span class="st">&quot;relatedIdentifier&quot;</span>, <span class="kw">paste0</span>(<span class="st">&quot;http://sites.neotomadb.org/&quot;</span>, dataset),
+  <span class="dt">attrs =</span> <span class="kw">list</span>(<span class="dt">relatedIdentifierType=</span><span class="st">&quot;URL&quot;</span>),
+  <span class="dt">parent =</span> root[[<span class="st">&quot;relatedIdentifiers&quot;</span>]])</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Number 13: size</span>
+size &lt;-<span class="st"> </span><span class="kw">as.numeric</span>(<span class="kw">object.size</span>(<span class="kw">GET</span>(<span class="kw">paste0</span>(<span class="st">&quot;api.neotomadb.org/v1/downloads/&quot;</span>, dataset))))
+<span class="kw">newXMLNode</span>(<span class="st">&quot;sizes&quot;</span>, <span class="kw">newXMLNode</span>(<span class="st">&quot;size&quot;</span>, <span class="kw">paste0</span>(<span class="kw">ceiling</span>(size/<span class="dv">1000</span>), <span class="st">&quot; KB&quot;</span>)), <span class="dt">parent =</span> root)
+
+<span class="co"># Number 14:</span>
 <span class="kw">newXMLNode</span>(<span class="st">&quot;formats&quot;</span>, <span class="dt">parent =</span> root)
 <span class="kw">newXMLNode</span>(<span class="st">&quot;format&quot;</span>, <span class="st">&quot;XML&quot;</span>, <span class="dt">parent =</span> root[[<span class="st">&quot;formats&quot;</span>]])
 <span class="kw">newXMLNode</span>(<span class="st">&quot;format&quot;</span>, <span class="st">&quot;TLX&quot;</span>, <span class="dt">parent =</span> root[[<span class="st">&quot;formats&quot;</span>]])
@@ -392,37 +403,10 @@ default$affiliation &lt;-<span class="st"> </span><span class="kw">gsub</span>(<
 <p><code>GeoLocation</code> Needs to be implemented. I can figure out if it’s a box or point based on the query. Then that’s it!</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">xmlSchemaValidate</span>(<span class="st">'data/metadata.xsd'</span>, doc)</code></pre></div>
 <pre><code>## $status
-## [1] 1871
+## [1] 0
 ## 
 ## $errors
-## [[1]]
-## $msg
-## [1] &quot;Element '{http://datacite.org/schema/kernel-3}indentifier': This element is not expected. Expected is one of ( {http://datacite.org/schema/kernel-3}identifier, {http://datacite.org/schema/kernel-3}creators, {http://datacite.org/schema/kernel-3}titles, {http://datacite.org/schema/kernel-3}publisher, {http://datacite.org/schema/kernel-3}publicationYear, {http://datacite.org/schema/kernel-3}subjects, {http://datacite.org/schema/kernel-3}contributors, {http://datacite.org/schema/kernel-3}dates, {http://datacite.org/schema/kernel-3}language, {http://datacite.org/schema/kernel-3}resourceType ).\n&quot;
-## 
-## $code
-## XML_SCHEMAV_ELEMENT_CONTENT 
-##                        1871 
-## 
-## $domain
-## XML_FROM_SCHEMASV 
-##                17 
-## 
-## $line
-## [1] 0
-## 
-## $col
-## [1] 0
-## 
-## $level
-## XML_ERR_ERROR 
-##             2 
-## 
-## $filename
-## character(0)
-## 
-## attr(,&quot;class&quot;)
-## [1] &quot;XMLError&quot;
-## 
+## list()
 ## attr(,&quot;class&quot;)
 ## [1] &quot;XMLStructuredErrorList&quot;
 ## 
@@ -447,8 +431,8 @@ out_doi &lt;-<span class="st"> </span><span class="kw">substr</span>(<span class
                   <span class="kw">regexpr</span>(<span class="st">&quot;</span><span class="ch">\\</span><span class="st">s</span><span class="ch">\\</span><span class="st">|&quot;</span>, <span class="kw">content</span>(r)) -<span class="st"> </span><span class="dv">1</span>)
 
 <span class="kw">content</span>(r)</code></pre></div>
-<pre><code>## [1] &quot;error: bad request - element 'datacite': malformed DataCite record: no &lt;identifier&gt; element&quot;</code></pre>
-<p>This then gives us a DOI that we can check.</p>
+<pre><code>## [1] &quot;success: doi:10.5072/FK20C4ZD0M | ark:/b5072/fk20c4zd0m&quot;</code></pre>
+<p>This then gives us a DOI <a href="doi:10.5072/FK20C4ZD0M" class="uri">doi:10.5072/FK20C4ZD0M</a> that we can check.</p>
 </div>
 </div>
 <div id="landing-page" class="section level2">

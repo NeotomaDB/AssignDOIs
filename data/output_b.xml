@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<resource xmlns="http://datacite.org/schema/kernel-3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-3 http://schema.datacite.org/meta/kernel-3/metadata.xsd">
-  <indentifier identifierType="DOI">(:tba)</indentifier>
-  <creators>
+<resource xsi:schemaLocation="http://datacite.org/schema/kernel-3 http://schema.datacite.org/meta/kernel-3/metadata.xsd" xmlns="http://datacite.org/schema/kernel-3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <identifier identifierType="DOI">10.5072/example-full</identifier>
+    <creators>
     <creator>
       <creatorName>Cwynar, Les C.</creatorName>
       <affiliation>Department of Biology, University of New Brunswick, Bag Service Number 45111, Fredericton, NB E3B 6E1, CANADA</affiliation>
@@ -31,8 +31,12 @@
     <contributor contributorType="Researcher">
       <contributorName>Cwynar, Les C.</contributorName>
     </contributor>
+    <contributor contributorType="DataCollector">
+      <contributorName>Cwynar, Les C.</contributorName>
+    </contributor>
   </contributors>
   <dates>
+    <date dateType="Submitted">1998-07-05</date>
     <date dateType="Submitted">1998-07-05</date>
     <date dateType="Created">1998-07-05</date>
     <date dateType="Updated">1998-07-05</date>
