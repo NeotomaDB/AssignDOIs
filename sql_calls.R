@@ -38,3 +38,74 @@ date_call <- function(x) {
               SELECT ds.RecDateModified, 'Updated' FROM datasetsubmissions AS ds
               WHERE ds.DatasetID = ", x, ";")
 }
+
+geoloc_call <- function(x) {
+  paste0("Select CONCAT(LatitudeSouth, ' ', 
+                        LongitudeWest, ' ',
+                        LatitudeNorth, ' ', LongitudeEast)
+  FROM sites
+  INNER JOIN
+  (SELECT SiteID 
+  FROM collectionunits
+  INNER JOIN
+  (SELECT datasets.CollectionUnitID FROM datasets WHERE DatasetID = ", x, ") as ds
+  ON collectionunits.CollectionUnitID = ds.CollectionUnitID) as scd 
+  ON sites.SiteID = scd.SiteID")
+}
+
+doi_call <- function(x) {
+  paste0("SELECT DOI
+  FROM publications
+  INNER JOIN (SELECT publicationID FROM datasetpublications WHERE datasetID = ", x, ") as dpub 
+  ON publications.publicationID = dpub.publicationID")
+}
+
+pub_call <- function(x) {
+  paste0("SELECT *
+         FROM publications
+         INNER JOIN (SELECT publicationID FROM datasetpublications WHERE datasetID = ", x, ") as dpub 
+         ON publications.publicationID = dpub.publicationID")
+}
+
+constdb_call <- function(x) {
+  paste0("Select DatabaseName 
+FROM constituentdatabases
+         INNER JOIN (SELECT DatabaseID FROM datasetdatabases WHERE DatasetID = ", x, ") as dsdb 
+         ON dsdb.DatabaseID = constituentdatabases.DatabaseID")
+}
+
+sharedSite_call <- function(x) {
+  paste0("SELECT CONCAT(SiteName, ' ', DatasetType, ' dataset') as Dataset, DatasetType, DatasetID FROM datasettypes
+INNER JOIN (SELECT SiteName, DatasetID, DatasetTypeID from sites
+         INNER JOIN
+         (SELECT DatasetID, jssi.CollectionUnitID, SiteID, DatasetTypeID FROM datasets
+         INNER JOIN (SELECT * FROM collectionunits 
+         WHERE collectionunits.SiteID = 
+         (SELECT SiteID FROM collectionunits
+         INNER JOIN (SELECT collectionunits.CollectionUnitID 
+         FROM collectionunits
+         INNER JOIN (SELECT * FROM datasets where DatasetID = ", x, ") as ds
+         ON ds.CollectionUnitID = collectionunits.CollectionUnitID) as clu
+         ON clu.CollectionUnitID = collectionunits.CollectionUnitID)) as jssi
+         ON jssi.CollectionUnitID = datasets.CollectionUnitID) AS bigjoin
+         ON sites.SiteID = bigjoin.SiteID) AS SiteDSType
+         ON datasettypes.DatasetTypeID = SiteDSType.DatasetTypeID")
+}
+
+sitedesc_call <- function(x) {
+  paste0("SELECT SiteDescription FROM sites
+INNER JOIN (SELECT *
+         FROM collectionunits
+         INNER JOIN (SELECT CollectionUnitID as cuid FROM datasets where DatasetID = ", x, ") as ds
+         ON ds.cuid = collectionunits.CollectionUnitID) as cu
+         ON cu.SiteID = sites.SiteID")
+}
+
+agerange_call <- function(x){
+  paste0("select smallage.AgeBoundYounger, smallage.AgeBoundOlder, agetypes.AgeType FROM agetypes
+INNER JOIN
+         (SELECT AgeBoundYounger, AgeBoundOlder, AgeTypeID FROM chronologies
+         INNER JOIN (SELECT CollectionUnitID as cuid FROM datasets where DatasetID = ", x, ") as ds
+         ON ds.cuid = chronologies.CollectionUnitID WHERE chronologies.IsDefault = 1) as smallage
+         ON smallage.AgeTypeID = agetypes.AgeTypeID")
+}

@@ -1,0 +1,139 @@
+---
+output:
+  html_document:
+    code_folding: show
+    highlight: pygment
+    number_sections: no
+    toc: no
+    toc_depth: 3
+    theme: paper
+---
+
+```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+library(leaflet)
+library(xml2)
+library(RMySQL, quietly = TRUE, verbose = FALSE)
+library(httr, quietly = TRUE, verbose = FALSE)
+
+source('sql_calls.R')
+
+# Note, this is being run by a knit command in another document, so 
+# ds_id is being passed in from the external script:
+
+source('sql_calls.R')
+
+if (!exists("con")) {
+  
+  con <- dbConnect(MySQL(),
+                   user = 'root', 
+                   dbname = 'neotoma', 
+                   password = 'c@mpf1re', 
+                   host = 'localhost')
+
+}
+  
+default <- dbGetQuery(con, statement = default_call(ds_id))
+sharedds <- dbGetQuery(con, statement = sharedSite_call(ds_id))
+
+```
+
+# Neotoma Dataset `r ds_id`
+
+## `r default$SiteName[1]`
+
+<div style="float: right;">
+```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE, fig.width=3, fig.height=3}
+
+new_map <- leaflet() %>% addTiles()
+
+# Now we have to pull out the lat/longs:
+locs <- xml_text(xml_children((xml_children(dataset)[[which(tags == "geoLocations")]])))
+locs <- strsplit(locs, split = ' ')[[1]]
+locs <- as.numeric(locs[nchar(locs) > 0])
+
+if (locs[1] == locs[3] & locs[2] == locs[4]) {
+  new_map <- addMarkers(new_map, lng = locs[2], lat = locs[1]) %>% 
+    setView(lng = locs[2], lat = locs[1], zoom = 3)
+} else {
+  new_map <- addPolygons(new_map, lng = c(locs[c(2,4)]), lat = c(locs[c(1,3)])) %>%
+    setView(lng = locs[2], lat = locs[1], zoom = 3)
+}
+
+new_map
+```
+</div>
+
+**DOI**: [`r xml_text(xml_children(dataset)[[which(tags == "identifier")]])`](`r paste0("http://dx.doi.org/", substr(xml_text(xml_children(dataset)[[which(tags == "identifier")]]), 5, nchar(xml_text(xml_children(dataset)[[which(tags == "identifier")]]))))`)
+
+**Links**: View on [Neotoma Explorer](http://apps.neotomadb.org/explorer/?datasetid=`r ds_id`) | [Raw JSON](http://api.neotomadb.org/v1/data/downloads/`r ds_id`)
+
+**Constituent Database**: `r unlist(dbGetQuery(con, statement = constdb_call(ds_id)))`
+
+**Dataset Type**: `r sharedds$DatasetType[which(sharedds$DatasetID == ds_id)]`
+
+**Latitude**: `r mean(locs[1], locs[3])`
+
+**Longitude**: `r mean(locs[2], locs[4])`
+
+```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+agerange <- dbGetQuery(con, statement = agerange_call(ds_id))
+if (nrow(agerange) == 0) {
+  range_out <- "No relevant chronology."
+} else {
+  range_out <- paste0(agerange[1], ' -- ', agerange[2], 'ybp, ', agerange[3])
+}
+```
+
+**Age Range**: 4700 - 7400 ybp
+
+**Description**: `r unlist(dbGetQuery(con, statement = sitedesc_call(ds_id)))`
+
+<br>
+
+## Affiliated Researchers
+
+```{r, results='as-is', echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+contacts <- dbGetQuery(con, statement = contributor_call(ds_id))
+contacts <- apply(contacts, 2, function(x){ iconv(x, "UTF-8", 'latin1')})
+
+contacts[,"affiliation"] <- gsub('\r\n', ', ', contacts[,"affiliation"])
+colnames(contacts) <- c("Name", "Affiliation", "Contribution")
+
+contacts <- contacts[order(contacts[,1]), ]
+contacts <- contacts[!duplicated(contacts),]
+
+knitr::kable(contacts)
+```
+
+
+## Publications
+
+```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+publications <- dbGetQuery(con, statement = pub_call(ds_id))
+publications[,4] <- iconv(publications[,4], "UTF-8", "latin1")
+
+knitr::kable(publications[,c(1,4)])
+```
+
+## Other Associated Datasets
+
+Other Datasets at Same Site:
+```{r, results = 'as-is', echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+
+sharedds <- sharedds[-which(sharedds$DatasetID == ds_id),c("Dataset", "DatasetID")]
+
+if (nrow(sharedds) > 0) {
+  sharedds$JSON <- paste0("[link](http://api.neotomadb.org/v1/data/downloads/",sharedds[,2],")")
+  sharedds$Explorer <- paste0("[link](http://apps.neotomadb.org/explorer/?datasetid=",sharedds[,2],")")
+  knitr::kable(sharedds[,-2], row.names = FALSE)
+} else {
+  cat("No other datasets at this site.")
+}
+
+```
+
+Most recent Neotoma Database snapshot: [http://www.neotomadb.org/snapshots]()
+
+## Neotoma Data Use Policy 
+
+We ask all data users to consider the Neotoma Data Use policy -- [link](http://www.neotomadb.org/data/category/use) -- as well as the general guidelines of open and ethical data sharing when using this data.
