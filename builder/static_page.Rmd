@@ -1,0 +1,230 @@
+---
+output:
+  html_document:
+    code_folding: null
+    keep_md: false
+    mathjax: null
+    self_contained: false
+    number_sections: no
+    highlight: null
+    toc: no
+    includes:
+      before_body: header.html
+      after_body: footer.html
+    theme: yeti
+    md_extensions: -autolink_bare_uris
+---
+
+
+```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+library(leaflet)
+library(xml2)
+library(RODBC, quietly = TRUE, verbose = FALSE)
+library(httr, quietly = TRUE, verbose = FALSE)
+
+source("R/assign_fun.R", verbose = FALSE, echo = FALSE)
+ezid_out <- suppressWarnings(assign_doi(ds_id, post = TRUE))
+
+if (is.null(ezid_out[[2]])) {stop('Whoops')}
+
+table <- read.csv('outputs.csv', header = TRUE, stringsAsFactors = FALSE)
+
+table <- rbind(table, c(ds_id, ifelse(length(ezid_out[[2]]) > 1, "Err", ezid_out[[2]])))
+
+write.csv(table, 'outputs.csv', row.names = FALSE)
+
+# > 10.5072/FK20G3NT7Q
+
+# Note, this is being run by a knit command in another document, so 
+# ds_id is being passed in from the external script:
+
+source('R/sql_calls.R')
+
+con <- odbcDriverConnect('driver={SQL Server};server=SIMONGORING-PC\\SQLEXPRESS;database=Neotoma;trusted_connection=true')
+  
+default <- sqlQuery(con, query = default_call(ds_id))
+# Clean the affiliation:
+default$affiliation <- gsub('\r\n', ', ', default$affiliation)
+
+sharedds <- sqlQuery(con, query = sharedSite_call(ds_id))
+
+dataset <- read_xml(paste0('../data/datasets/', ds_id, '_output.xml'))
+
+```
+
+<title>`r default$SiteName[1]` - Neotoma Dataset `r ds_id`</title>
+
+# Neotoma Dataset `r ds_id`
+
+## `r default$SiteName[1]`
+
+<div style="float: right;">
+```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE, fig.width=3, fig.height=3}
+
+new_map <- leaflet() %>% addTiles()
+
+# Now we have to pull out the lat/longs:
+locs <- xml_text(xml2::xml_find_all(dataset, ".//d1:geoLocations", xml_ns(dataset)))
+locs <-   strsplit(locs, split = ' ')[[1]]
+locs <- as.numeric(locs[nchar(locs) > 0])
+
+popup_content <- paste0("<b>",default$SiteName[1],"</b>",
+                        "<br>View in <a href=http://apps.neotomadb.org//explorer/?datasetid=", 
+                        ds_id, ">Explorer</a>")
+
+if (locs[1] == locs[3] & locs[2] == locs[4]) {
+  new_map <- addMarkers(new_map, 
+                        popup = popup_content, 
+                        lng = locs[2], lat = locs[1]) %>% 
+    setView(lng = locs[2], lat = locs[1], zoom = 3)
+} else {
+  new_map <- addPolygons(new_map, 
+                         lng = c(locs[c(2,4)]), 
+                         lat = c(locs[c(1,3)]), popup = popup_content) %>%
+    setView(lng = locs[2], lat = locs[1], 
+            zoom = 3)
+}
+
+new_map
+```
+</div>
+
+```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+doi <- ezid_out[[2]]
+  #xml_text(xml_find_all(dataset, ".//d1:identifier", xml_ns(dataset)))
+```
+
+**DOI**: [`r substr(doi, 5, nchar(doi))`](`r paste0("http://dx.doi.org/", substr(doi, 5, nchar(doi)))`)
+
+**Links**: View on [Neotoma Explorer](http://apps.neotomadb.org/explorer/?datasetid=`r ds_id`) | [Raw JSON](http://api.neotomadb.org/v1/data/downloads/`r ds_id`)
+
+<div itemprop="Dataset" itemscope itemtype="https://schema.org/Dataset" itemid=`r ezid_out[[2]]`>
+**Constituent Database**: `r unlist(sqlQuery(con, query = constdb_call(ds_id)))`
+
+`r paste0('<meta itemprop="includedInDataCatalog" content="Neotoma Paleoecological Database" />')`
+`r paste0('<meta itemprop="about" content="Paleoecology" />')`
+`r paste0('<meta itemprop="author" content="',contacts[which(contacts[,"Contribution"] == "ProjectLeader"),1],'" />')`
+`r paste0('<meta itemprop="inLanguage" content="English" />')`
+`r paste0('<meta itemprop="license" content="https://creativecommons.org/licenses/by/4.0/deed.en_US" />')`
+
+</div>
+**Dataset Type**: `r sharedds$DatasetType[which(sharedds$DatasetID == ds_id)]`
+
+<div itemprop="geo" itemscope itemtype="http://schema.org/GeoCoordinates" itemid=`r ezid_out[[2]]`>
+
+**Latitude**: `r mean(locs[1], locs[3])`
+
+**Longitude**: `r mean(locs[2], locs[4])`
+
+`r paste0('<meta itemprop="latitude" content="', mean(locs[1], locs[3]), '" />')`
+`r paste0('<meta itemprop="longitude" content="', mean(locs[2], locs[4]), '" />')`
+</div>
+
+```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+agerange <- sqlQuery(con, query = agerange_call(ds_id))
+if (nrow(agerange) == 0) {
+  range_out <- "No relevant chronology."
+} else {
+  range_out <- paste0(agerange[1], ' -- ', agerange[2], 'ybp, ', agerange[3])
+}
+```
+
+**Age Range**: 4700 - 7400 ybp
+
+<div itemprop="geo" itemscope itemtype="http://schema.org/GeoCoordinates" itemid=`r ezid_out[[2]]`>
+**Description**: `r unlist(sqlQuery(con, query = sitedesc_call(ds_id)))`
+`r paste0('<meta itemprop="description" content="', unlist(sqlQuery(con, query = sitedesc_call(ds_id))), '" />')`
+</div>
+<br>
+
+## Affiliated Researchers
+
+```{r, results='as-is', echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+
+contacts <- sqlQuery(con, query = contributor_call(ds_id))
+contacts <- apply(contacts, 2, function(x){ iconv(x, "UTF-8", 'latin1')})
+
+contacts[,"affiliation"] <- gsub('\r\n', ', ', contacts[,"affiliation"])
+colnames(contacts) <- c("Name", "Affiliation", "Contribution")
+
+contacts <- contacts[order(contacts[,1]), ]
+contacts <- contacts[!duplicated(contacts),]
+
+knitr::kable(contacts, row.names = FALSE)
+
+```
+
+
+## Publications
+
+```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE, results='as-is'}
+publications <- sqlQuery(con, query = pub_call(ds_id), as.is = TRUE)
+#publications[,4] <- iconv(publications[,4], "UTF-8", "latin1")
+
+if (nrow(publications) > 0) {
+  knitr::kable(publications[,c(1,4)])
+} else {
+  cat("No publications in this record.")
+}
+
+```
+
+## Citation
+
+```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+
+#### NOTE: CAN I ADD A `<script> command that will generate the current date/time?
+
+plain_text <- paste0(contacts[which(contacts[,"Contribution"] == "ProjectLeader"),1], " ",
+       xml_text(xml2::xml_find_all(dataset, ".//d1:publicationYear", xml_ns(dataset))),
+       ". ",
+       default$SiteName[1], ". In, *",
+       unlist(sqlQuery(con, query = constdb_call(ds_id))), "*. ",
+       "Neotoma Paleoecological Database. ", ezid_out[[2]],"<br>")
+       
+bibtex <- paste0("@inbook{<br>&nbsp;&nbsp;author={",
+                 contacts[which(contacts[,"Contribution"] == "ProjectLeader"),1],
+                 "},<br>&nbsp;&nbsp;year={",
+                 xml_text(xml2::xml_find_all(dataset, ".//d1:publicationYear", xml_ns(dataset))),
+                 "},<br>&nbsp;&nbsp;title={",
+                 default$SiteName[1], "},<br>&nbsp;&nbsp;booktitle={",
+                 unlist(sqlQuery(con, query = constdb_call(ds_id))), 
+                 "},<br>&nbsp;&nbsp;publisher={",
+                 "Neotoma Paleoecological Database},<br>&nbsp;&nbsp;doi={",
+                 ezid_out[[2]],"}<br>}<br>")
+
+```
+
+### APA
+
+`r plain_text`
+
+### BibTeX
+
+`r bibtex`
+
+## Other Associated Datasets
+
+### Other Datasets at Same Site:
+```{r, results = 'as-is', echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+
+sharedds <- sharedds[-which(sharedds$DatasetID == ds_id),c("Dataset", "DatasetID")]
+
+if (nrow(sharedds) > 0) {
+  sharedds$JSON <- paste0("[link](http://api.neotomadb.org/v1/data/downloads/",sharedds[,2],")")
+  sharedds$Explorer <- paste0("[link](http://apps.neotomadb.org/explorer/?datasetid=",sharedds[,2],")")
+  knitr::kable(sharedds[,-2], row.names = FALSE)
+} else {
+  cat("No other datasets at this site.")
+}
+
+odbcCloseAll()
+```
+
+### Most recent Neotoma Database snapshot: 
+
+[http://www.neotomadb.org/snapshots](http://www.neotomadb.org/snapshots)
+
+## Neotoma Data Use Policy 
+
+We ask all data users to consider the Neotoma Data Use policy -- [link](http://www.neotomadb.org/data/category/use) -- as well as the general guidelines of open and ethical data sharing when using this data.
