@@ -1,43 +1,8 @@
----
-title: "DOI workflow"
-author: "Simon Goring"
-date: "May 22, 2016"
-output:
-  html_document:
-    code_folding: show
-    keep_md: true
-    highlight: pygment
-    number_sections: false
-    theme: journal
-    toc: false
-    toc_depth: 3
-  pdf_document:
-    toc: yes
-    toc_depth: '3'
-    keep_md: true
-  word_document:
-    toc: yes
-    toc_depth: '3'
-    keep_md: true
-csl: elsevier-harvard.csl
-bibliography: doi_publications.bib
----
+# DOI workflow
+Simon Goring  
+May 22, 2016  
 
-```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
-runner = FALSE
 
-library(RODBC, quietly = TRUE, verbose = FALSE)
-library(httr, quietly = TRUE, verbose = FALSE)
-library(XML, quietly = TRUE, verbose = FALSE)
-
-source('builder/R/sql_calls.R')
-
-schema <- xmlSchemaParse('data/metadata.xsd')
-sens <- read.table('doi_sens.txt', stringsAsFactors = FALSE)
-
-con <- odbcDriverConnect('driver={SQL Server};server=SIMONGORING-PC\\SQLEXPRESS;database=Neotoma;trusted_connection=true')
-
-```
 
 **120 Character Summary**
 
@@ -124,7 +89,8 @@ As mentioned in the Introduction, there is no single object in Neotoma that repr
 
 To first generate the XML document, we use namespace definitions and the schema provided by DataCite as v3.1 [@]
 
-```{r, results='hide', tidy = TRUE, eval=TRUE}
+
+```r
 # Building the XML document:
 
 ds_id <- 1001
@@ -132,12 +98,9 @@ ds_id <- 1001
 # Generating the new XML framework and associated namespaces:
 doc <- newXMLDoc()
 
-root <- newXMLNode('resource', 
-                   namespaceDefinitions = c("http://datacite.org/schema/kernel-3",
-                             "xsi" = "http://www.w3.org/2001/XMLSchema-instance"),
-                   attrs = c("xsi:schemaLocation" = "http://datacite.org/schema/kernel-3 http://schema.datacite.org/meta/kernel-3/metadata.xsd"), 
-                   doc = doc)
-
+root <- newXMLNode("resource", namespaceDefinitions = c("http://datacite.org/schema/kernel-3", 
+    xsi = "http://www.w3.org/2001/XMLSchema-instance"), attrs = c(`xsi:schemaLocation` = "http://datacite.org/schema/kernel-3 http://schema.datacite.org/meta/kernel-3/metadata.xsd"), 
+    doc = doc)
 ```
 
 #Assigning Metadata Tags
@@ -148,7 +111,8 @@ We structure this paper in the same order as the [DataCite Schema Documentation]
 
 The `identifier` links directly to the dataset's Landing Page.  The generation of the landing page is covered elsewhere.
 
-```{r, results = 'hide', message = FALSE, warning = FALSE, eval=TRUE}
+
+```r
 default <- sqlQuery(con, query = default_call(ds_id))
 
 # Clean the affiliation:
@@ -157,14 +121,14 @@ default$affiliation <- gsub('\r\n', ', ', default$affiliation)
 # This is the empty shoulder for assigning DOIs:
 newXMLNode("identifier", '10.5072/FK2', 
            attrs = c('identifierType' = 'DOI'), parent = root)
-
 ```
 
 ##Creators:
 
-While affiliated researchers occur futher in the list, we use the `datasetpi` field from the Neotoma Database to assign the Creator field.  While the majority of datasets have only a single assigned PI, there are `r sum(table(sqlQuery(con, query = "SELECT DatasetID FROM datasetpis"))>1)` datasets with multiple creators.  The Dataset PI is the individual (or individuals) who are cited in the data citation.
+While affiliated researchers occur futher in the list, we use the `datasetpi` field from the Neotoma Database to assign the Creator field.  While the majority of datasets have only a single assigned PI, there are 0 datasets with multiple creators.  The Dataset PI is the individual (or individuals) who are cited in the data citation.
 
-```{r, results = 'hide', message = FALSE, warning = FALSE, eval=runner}
+
+```r
 newXMLNode("creators", parent = root)
 
 lapply(1:nrow(default),
@@ -175,27 +139,27 @@ lapply(1:nrow(default),
                                      newXMLNode("affiliation",
                                                 default$affiliation[x]))))
         })
-
 ```
 
 ##Titles
 
-The title is a synthetic object, produced by combining the site name and the data type.  In this case, we generate the name `r default$SiteName[1]`.
+The title is a synthetic object, produced by combining the site name and the data type.  In this case, we generate the name Hail Lake pollen dataset.
 
-```{r, results = 'hide', message = FALSE, warning = FALSE, eval=runner}
+
+```r
 newXMLNode("titles", parent = root)
 newXMLNode("title", 
            default$SiteName[1],
            attrs = c("xml:lang" = "en-us"),
            parent = root[["titles"]])
-
 ```
 
 ##Publisher & Publication Year
 
 Neotoma consists of two levels of publication.  The model for data publication in Neotoma is published volumes within a book, where each constituent database is a "chapter" with a unique editor, published as part of the Neotoma Paleoecological Database.  Because Neotoma acts as a portal for many unique databases it is important to recognize both the primacy of the original database, but also the effort taken by the managers of those databases in assembling data and building community around those data products.  However, for `Publication`, we consider the creation of the DOI the moment of publication and Neotoma, as the licensing agent, the publisher. There is an opportunity to describe dates with more granularity in the metadata schema below.
 
-```{r, results = 'hide', message = FALSE, warning = FALSE, eval=runner}
+
+```r
 newXMLNode("publisher", "Neotoma Paleoecological Database", parent = root)
 
 # Number 5:
@@ -206,14 +170,13 @@ newXMLNode("publicationYear", format(Sys.Date(), "%Y"), parent = root)
 
 The Subject and Subject Scheme information could use some work & reflection.  I've created a document [here](https://docs.google.com/document/d/1wcR6WWAV3COD_MeOgaOEqtpJ3bbe1nxF9omnmmlEA5Q/edit?usp=sharing) that discusses it in more detail..  For now I will assign everything "Paleoecology".
 
-```{r, results = 'hide', message = FALSE, warning = FALSE, eval=runner}
 
+```r
 newXMLNode("subjects", newXMLNode("subject", 
                                   "Paleoecology",
                                   attrs = c("subjectScheme" = "Library of Congress",
                                             "schemeURI" = "http://id.loc.gov/authorities/subjects")), 
            parent = root)
-
 ```
 
 ##Contributors
@@ -222,15 +185,10 @@ The contributor information comes from the `Contact` tables for the record.  The
 
 Contributors to the dataset include individuals beyond the dataset PI (above).  When a dataset is entered into Neotoma there may be a number of individuals who interact with the data, including data entry technicians, individuals who may update the age model, individuals who assisted in field collection, etc.  Neotoma strongly believes in transparency, and credit for data contribution, however, we believe that this is balanced by clear attribution for data generation.  As such, the *Contributors* fields in the metadata lists all individuals associated with the dataset, but the data citation lists only the dataset PI.
 
-```{r results='as-is', echo=FALSE, eval=runner}
-contacts <- sqlQuery(con, query = contributor_call(ds_id))
 
-contacts$affiliation <- gsub('\r\n', ', ', contacts$affiliation)
-knitr::kable(contacts)
-```
 
-```{r, results='hide', eval=runner}
 
+```r
 # The contributors come from the DB call.  This duplicates 
 newXMLNode("contributors", parent = root)
 lapply(1:nrow(contacts), 
@@ -246,12 +204,16 @@ lapply(1:nrow(contacts),
 
 Dates in Neotoma include datas of original accession to the North American Pollen Database (or other constituent database), accession into Neotoma, and subsequent revision dates.
 
-```{r results='as-is', echo = FALSE, eval=TRUE}
-dates   <- sqlQuery(con, query = date_call(ds_id))
-knitr::kable(dates)
-```
 
-```{r, results='hide'}
+SubmissionDate                  
+--------------------  ----------
+1998-07-05 00:00:00   Submitted 
+2007-06-30 00:00:00   Submitted 
+2013-09-30 14:02:43   Created   
+2014-10-25 00:31:04   Updated   
+
+
+```r
 # Adding the dates in one at a time, we use the lapply to insert them
 # into the `dates` node.
 newXMLNode("dates", parent = root)
@@ -262,27 +224,26 @@ lapply(1:nrow(dates),
                            attrs = c("dateType" = dates[x,2]), 
                     parent = root[["dates"]]) 
          } )
-
 ```
 
 ##Language and Resource Type
 
-```{r, echo = TRUE, results='hide', eval=runner}
+
+```r
 # Number 9:
 newXMLNode("language", "English", parent = root)
 
 # Number 10:
 newXMLNode("resourceType", "Dataset/Paleoecological Sample Data", 
            attrs = c("resourceTypeGeneral" = "Dataset"), parent = root)
-
 ```
 
 ##Related Identifiers
 
 `RelatedIdentifiers` are key metadata for the data records.  These identifiers will point to the URL of the publications relating to the dataset using `isCitedBy` (as opposed to `IsReferencedBy`), they will point to the DOI for Neotoma using `???`, and will use `????` for duplicate copies of data when the records are stored across databases.  The Related Identifiers are critical pieces of cyberinfrastructure, explicitly linking the data to other resources through the DOI infrastructure.
 
-```{r, results = 'hide', message = FALSE, warning = FALSE, eval=runner}
 
+```r
 newXMLNode("relatedIdentifiers", parent = root)
 
 newXMLNode("relatedIdentifier", paste0("api.neotomadb.org/v1/downloads/", ds_id),
@@ -309,26 +270,26 @@ if (is.na(dois)) {
   parent = root[["relatedIdentifiers"]])
   })
 }
-
 ```
 
 ##Size
 
 Data object size can be reported for each component of the data source, JSON, XML, TLX or others.  This term is straightforward and needs little explanation.
 
-```{r, results='hide', eval=runner}
+
+```r
 # Number 13: size
 size <- as.numeric(object.size(GET(paste0("api.neotomadb.org/v1/downloads/", ds_id))))
 
 newXMLNode("sizes", newXMLNode("size", paste0('JSON: ', ceiling(size/1000), " KB")), parent = root)
-
 ```
 
 ##Format
 
 The data, as indicated above, is available through the landing page in only two formats, JSON or TLX.  Future formats (including JSON-LD) will be supported, and, at this point the metadata will be updated.
 
-```{r, results = 'hide', message = FALSE, warning = FALSE, eval=runner}
+
+```r
 # Number 14:
 newXMLNode("formats", parent = root)
 newXMLNode("format", "XML", parent = root[["formats"]])
@@ -344,13 +305,13 @@ Version is defined for all datasets as v1.0, from the date of initial generation
 
 The Neotoma Database provides a User Agreement for the database and constituent datasets.  Ultimately, the goal of the database is to provide open exchange of data to researchers and the public.  In 2015 the a decision was made to license Neotoma data under a Creative Commons BY4 License -- [http://creativecommons.org/licenses/by/4.0/deed.en_US](). Under this license there is a requirement for appropriate credit, in a reasonable manner, however the license provides broad protenction to the licensee for modification and downstream use of the dataset.
 
-```{r, results='hide', eval=runner}
+
+```r
 # Number 16
 
 addChildren(newXMLNode("rightsList", parent = root),
            children = newXMLNode("rights", "CC-BY4", 
            attrs = c("rightsURI" = "http://creativecommons.org/licenses/by/4.0/deed.en_US")))
-
 ```
 
 ##Description
@@ -361,26 +322,27 @@ addChildren(newXMLNode("rightsList", parent = root),
 
 I use the full four coordinate string here.  People can figure out if it's a polygon or not.
 
-```{r, results = 'hide', message = FALSE, warning = FALSE, eval=runner}
+
+```r
 loc <- sqlQuery(con, query = geoloc_call(1001))
 
 newXMLNode("geoLocations", parent = root)
 newXMLNode("geoLocation", 
            newXMLNode("geoLocationBox", loc, parent = root),
            parent = root[["geoLocations"]])
-
 ```
 
 ##Validation and Upload
 
-```{r, message = FALSE, warning = FALSE, eval=runner}
+
+```r
 xmlSchemaValidate('data/metadata.xsd', doc)
 ```
 
 The schema now validates properly, we're happy about that, and so we push it using the EZID API:
 
-```{r, results = 'hide', message = FALSE, warning = FALSE, eval=runner}
 
+```r
 urlbase = 'https://ezid.cdlib.org/'
 
 # We need to clean up the XML formatting, removing hard returns and changing quotes:
@@ -403,22 +365,21 @@ out_doi <- substr(content(r),
 # Now that we've got an assigned DOI, push it into the XML:
 ```
 
-```{r results = 'hide', message = FALSE, warning = FALSE}
 
+```r
 if (!runner) {
   out_doi <- 1001
 }
-
 ```
 
-This then gives us a DOI `r out_doi` that we can check.  In the current implementation we'll need to update the record with the new identifier, but once we get our own shoulder we'll be fine and won't have to update `identifier` after data upload.
+This then gives us a DOI 1001 that we can check.  In the current implementation we'll need to update the record with the new identifier, but once we get our own shoulder we'll be fine and won't have to update `identifier` after data upload.
 
 #Updating Records
 
 In cases where a data set is updated, Neotoma still directly modifies the record.  This will (or may) change.  Now that we can build the XML okay we should be able to modify the DOI metadata using:
 
-```{r, results = 'hide', message = FALSE, warning = FALSE, eval=runner}
 
+```r
 xmlValue(root[["identifier"]]) <- out_doi
 
 saveXML(doc = doc, 

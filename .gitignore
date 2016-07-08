@@ -1,6 +1,5 @@
 # Local files
 DOI_assignment.R
-DOI_assignment.html
 DOI_assignment.pdf
 papers
 doi_sens.txt
@@ -38,3 +37,4 @@ vignettes/*.pdf
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
+.Rproj.user
