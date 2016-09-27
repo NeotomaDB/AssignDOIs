@@ -21,6 +21,7 @@ library(leaflet)
 library(xml2)
 library(RODBC, quietly = TRUE, verbose = FALSE)
 library(httr, quietly = TRUE, verbose = FALSE)
+ds_id <- 1001
 
 source("R/assign_fun.R", verbose = FALSE, echo = FALSE)
 ezid_out <- suppressWarnings(assign_doi(ds_id, post = TRUE))

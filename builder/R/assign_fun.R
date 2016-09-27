@@ -1,6 +1,6 @@
 assign_doi <- function(ds_id, post = TRUE) {
 
-  sens <- read.table('../doi_sens.txt', stringsAsFactors = FALSE)
+  sens <- unlist(read.table('../doi_sens.txt', stringsAsFactors = FALSE))
   
   library(RODBC, quietly = TRUE, verbose = FALSE)
   library(httr, quietly = TRUE, verbose = FALSE)
@@ -11,7 +11,7 @@ assign_doi <- function(ds_id, post = TRUE) {
                     'database=',sens[2],';',
                     'trusted_connection=true')
   
-  con <- odbcDriverConnect()
+  con <- odbcDriverConnect(conname)
   
   source('R/sql_calls.R')
 
