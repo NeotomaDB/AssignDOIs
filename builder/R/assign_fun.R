@@ -207,7 +207,7 @@ assign_doi <- function(ds_id, post = TRUE) {
     urlbase = 'https://ezid.cdlib.org/'
     
     XML::saveXML(doc = doc, 
-                 file = paste0('../data/datasets/', ds_id, '_output.xml'),
+                 file = paste0('c:/vdirs/doi/datasets/', ds_id, '_output.xml'),
                  prefix = '<?xml version="1.0" encoding="UTF-8"?>')
     
   }
@@ -216,11 +216,12 @@ assign_doi <- function(ds_id, post = TRUE) {
     
     # We need to clean up the XML formatting, removing hard returns and changing quotes:
     parse_doc <- gsub('\\n', '', paste0('datacite: ',
-                                        XML::saveXML(xmlParse(paste0('../data/datasets/', 
+                                        XML::saveXML(xmlParse(paste0('c:/vdirs/doi/datasets/', 
                                                                      ds_id, '_output.xml')))))
+  
     parse_doc <- gsub('\\"', "'", parse_doc)
     
-    body <- paste0('_target: http://neotomadb.github.io/dataset/',ds_id, '\n',parse_doc)
+    body <- paste0('_target: http://data.neotomadb.org/datasets/',ds_id, '\n',parse_doc)
     
     r = httr::POST(url = paste0(urlbase, 'shoulder/doi:10.5072/FK2'), 
     	             httr::authenticate(user = sens[3], password = sens[4]),

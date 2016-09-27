@@ -1,7 +1,7 @@
 # Note, FAUNMAP records are not really showing up here.  I think it's because the site name isn't where
 # I think it is.  Check with Eric.
 
-end_point <- 'C:\\Users\\Simon Goring\\Documents\\GitHub\\neotomadb.github.io\\dataset\\'
+end_point <- 'C:\\vdirs\\doi\\datasets'
 
 for (i in sample(19924, size = 1000, replace = FALSE)) {
 
