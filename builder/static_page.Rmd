@@ -229,3 +229,30 @@ odbcCloseAll()
 ## Neotoma Data Use Policy 
 
 We ask all data users to consider the Neotoma Data Use policy -- [link](http://www.neotomadb.org/data/category/use) -- as well as the general guidelines of open and ethical data sharing when using this data.
+
+<script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "Dataset",
+    "author": {
+        "@type": "Organization",
+        "description": "National Sciences Foundation Funded Database for Plio-Pleistocene Fossil Records",
+        "name": "Neotoma Paleoecological Database",
+        "url": "http://neotomadb.org"
+    },
+    "distribution":{
+      "@type":"DataDownload",
+      "contentUrl":"`r paste0("http://api.neotomadb.org/v1/data/downloads/",sharedds[,2])`",
+      "datePublished":`r Sys.time()`,
+      "inLanguage": "en",
+      "spatial": {
+        "@type": "Place",
+        "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": "`r mean(locs[1], locs[3])`",
+            "longitude": "`r mean(locs[2], locs[4])`"
+        }
+      }
+    }
+  }
+</script>
