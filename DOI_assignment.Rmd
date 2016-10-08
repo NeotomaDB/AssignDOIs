@@ -33,9 +33,9 @@ library(XML, quietly = TRUE, verbose = FALSE)
 source('builder/R/sql_calls.R')
 
 schema <- xmlSchemaParse('data/metadata.xsd')
-sens <- read.table('doi_sens.txt', stringsAsFactors = FALSE)
+#sens <- read.table('doi_sens.txt', stringsAsFactors = FALSE)
 
-con <- odbcDriverConnect('driver={SQL Server};server=SIMONGORING-PC\\SQLEXPRESS;database=Neotoma;trusted_connection=true')
+con <- odbcDriverConnect('driver={SQL Server};server=db5.emswin.psu.edu\\MSSQLSERVER_2012;database=Neotoma;trusted_connection=true')
 
 ```
 

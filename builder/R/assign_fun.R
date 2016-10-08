@@ -1,7 +1,5 @@
 assign_doi <- function(ds_id, post = TRUE) {
 
-  sens <- unlist(read.table('../doi_sens.txt', stringsAsFactors = FALSE))
-  
   library(RODBC, quietly = TRUE, verbose = FALSE)
   library(httr, quietly = TRUE, verbose = FALSE)
   library(XML, quietly = TRUE, verbose = FALSE)
