@@ -30,11 +30,11 @@ for (i in sample(19924, size = 1000, replace = FALSE)) {
                 recursive = TRUE, overwrite = TRUE) 
     }
   } else {
+    # Add check for date & SQL code to check relevant modification dates.
 #    file.copy(from = paste0('C:\\Users\\Simon Goring\\Documents\\GitHub\\neotomadb.github.io\\dataset\\', ds_id, '\\index.html'),
 #              to   = paste0('C:\\Users\\Simon Goring\\Documents\\GitHub\\neotomadb.github.io\\dataset\\', ds_id, '\\index_', format(Sys.time(), '%Y-%m-%d'), '.html'))
 #    try(rmarkdown::render('static_page.Rmd', 
 #                      output_file = paste0('C:\\Users\\Simon Goring\\Documents\\GitHub\\neotomadb.github.io\\dataset\\', ds_id, '\\index.html'),
 #                      envir = globalenv()))
   }
-  
 }

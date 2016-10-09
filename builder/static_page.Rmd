@@ -24,13 +24,17 @@ library(httr, quietly = TRUE, verbose = FALSE)
 ds_id <- 1001
 
 source("R/assign_fun.R", verbose = FALSE, echo = FALSE)
+
 ezid_out <- suppressWarnings(assign_doi(ds_id, post = TRUE))
 
 if (is.null(ezid_out[[2]])) {stop('Whoops')}
 
 table <- read.csv('outputs.csv', header = TRUE, stringsAsFactors = FALSE)
 
-table <- rbind(table, c(ds_id, ifelse(length(ezid_out[[2]]) > 1, "Err", ezid_out[[2]])))
+table <- rbind(table, 
+               c(ds_id, 
+                 ifelse(length(ezid_out[[2]]) > 1, "Err", ezid_out[[2]]),
+                 Sys.time()))
 
 write.csv(table, 'outputs.csv', row.names = FALSE)
 
@@ -99,27 +103,14 @@ doi <- ezid_out[[2]]
 
 **Links**: View on [Neotoma Explorer](http://apps.neotomadb.org/explorer/?datasetid=`r ds_id`) | [Raw JSON](http://api.neotomadb.org/v1/data/downloads/`r ds_id`)
 
-<div itemprop="Dataset" itemscope itemtype="https://schema.org/Dataset" itemid=`r ezid_out[[2]]`>
 **Constituent Database**: `r unlist(sqlQuery(con, query = constdb_call(ds_id)))`
-
-`r paste0('<meta itemprop="includedInDataCatalog" content="Neotoma Paleoecological Database" />')`
-`r paste0('<meta itemprop="about" content="Paleoecology" />')`
-`r paste0('<meta itemprop="author" content="',contacts[which(contacts[,"Contribution"] == "ProjectLeader"),1],'" />')`
-`r paste0('<meta itemprop="inLanguage" content="English" />')`
-`r paste0('<meta itemprop="license" content="https://creativecommons.org/licenses/by/4.0/deed.en_US" />')`
 
 </div>
 **Dataset Type**: `r sharedds$DatasetType[which(sharedds$DatasetID == ds_id)]`
 
-<div itemprop="geo" itemscope itemtype="http://schema.org/GeoCoordinates" itemid=`r ezid_out[[2]]`>
-
 **Latitude**: `r mean(locs[1], locs[3])`
 
 **Longitude**: `r mean(locs[2], locs[4])`
-
-`r paste0('<meta itemprop="latitude" content="', mean(locs[1], locs[3]), '" />')`
-`r paste0('<meta itemprop="longitude" content="', mean(locs[2], locs[4]), '" />')`
-</div>
 
 ```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
 agerange <- sqlQuery(con, query = agerange_call(ds_id))
@@ -233,26 +224,46 @@ We ask all data users to consider the Neotoma Data Use policy -- [link](http://w
 <script type="application/ld+json">
   {
     "@context": "http://schema.org",
-    "@type": "Dataset",
+    "@type": "Dataset
+    "license": "https://creativecommons.org/licenses/by/4.0/deed.en_US",
     "author": {
+      "@type":"Person",
+      
+    },
+    "includedInDataCatalog": {
+      "@type": "DataCatalogue",
+      "about": "Paleoecology",
+      "publisher": {
         "@type": "Organization",
-        "description": "National Sciences Foundation Funded Database for Plio-Pleistocene Fossil Records",
         "name": "Neotoma Paleoecological Database",
+        "alternateName":"Neotoma",
+        "description":"The Neotoma Paleoecology Database and Community is an online hub for data, research, education, and discussion about paleoenvironments.",
         "url": "http://neotomadb.org"
     },
+      "funder": {
+        "@type":"Organization",
+        "name":"National Sciences Foundation",
+        "alternateName": "NSF",
+        "url": "http://nsf.gov"
+      }
+    },
+    "about": "`r sharedds$DatasetType[which(sharedds$DatasetID == ds_id)]`",
     "distribution":{
       "@type":"DataDownload",
       "contentUrl":"`r paste0("http://api.neotomadb.org/v1/data/downloads/",sharedds[,2])`",
-      "datePublished":`r Sys.time()`,
-      "inLanguage": "en",
-      "spatial": {
-        "@type": "Place",
-        "geo": {
-            "@type": "GeoCoordinates",
-            "latitude": "`r mean(locs[1], locs[3])`",
-            "longitude": "`r mean(locs[2], locs[4])`"
-        }
+      "datePublished": "`r Sys.time()`",
+      "inLanguage": "en"
+    },
+    "spatial": {
+      "@type": "Place",
+      "name": "`r default$SiteName[1]`",
+      "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": "`r mean(locs[1], locs[3])`",
+          "longitude": "`r mean(locs[2], locs[4])`",
+          "elevation": "`r `"
       }
     }
   }
+}
 </script>

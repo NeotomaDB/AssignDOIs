@@ -11,7 +11,7 @@ assign_doi <- function(ds_id, post = TRUE) {
                     'database=',sens[2],';',
                     'trusted_connection=true')
   
-  con <- odbcDriverConnect(conname)
+  con <- RODBC::odbcDriverConnect('driver={SQL Server};server=SIMONGORING-PC\\SQLEXPRESS;database=Neotoma;trusted_connection=true')
   
   source('R/sql_calls.R')
 
@@ -178,6 +178,15 @@ assign_doi <- function(ds_id, post = TRUE) {
   XML::newXMLNode("format", 
                   "JSON", 
                   parent = root[["formats"]])
+  
+  # Description
+  newXMLNode("Description", 
+             paste0("Raw data for the ", 
+                    default$SiteName, 
+                    " obtained from the Neotoma Paleoecological Database."),
+             parent = root)
+  newXMLNode("descriptionType", 
+             "Abstract", parent  = root[["Description"]])
   
   # Number 16
   XML::addChildren(XML::newXMLNode("rightsList", parent = root),
