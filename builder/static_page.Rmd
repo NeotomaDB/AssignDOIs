@@ -16,12 +16,12 @@ output:
 ---
 
 
-```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+```{r buildXML_loadpkgs, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+
 library(leaflet)
 library(xml2)
 library(RODBC, quietly = TRUE, verbose = FALSE)
 library(httr, quietly = TRUE, verbose = FALSE)
-ds_id <- 1001
 
 source("R/assign_fun.R", verbose = FALSE, echo = FALSE)
 ezid_out <- suppressWarnings(assign_doi(ds_id, post = TRUE))
@@ -41,7 +41,7 @@ write.csv(table, 'outputs.csv', row.names = FALSE)
 
 source('R/sql_calls.R')
 
-con <- odbcDriverConnect('driver={SQL Server};server=SIMONGORING-PC\\SQLEXPRESS;database=Neotoma;trusted_connection=true')
+con <- odbcDriverConnect('driver={SQL Server};server=db5.emswin.psu.edu\\MSSQLSERVER_2012;database=Neotoma;trusted_connection=true')
   
 default <- sqlQuery(con, query = default_call(ds_id))
 # Clean the affiliation:
@@ -49,7 +49,7 @@ default$affiliation <- gsub('\r\n', ', ', default$affiliation)
 
 sharedds <- sqlQuery(con, query = sharedSite_call(ds_id))
 
-dataset <- read_xml(paste0('../data/datasets/', ds_id, '_output.xml'))
+dataset <- read_xml(paste0(end_point, '/', ds_id, '/', ds_id, '_output.xml'))
 
 ```
 
@@ -60,7 +60,7 @@ dataset <- read_xml(paste0('../data/datasets/', ds_id, '_output.xml'))
 ## `r default$SiteName[1]`
 
 <div style="float: right;">
-```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE, fig.width=3, fig.height=3}
+```{r leaflet_map, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE, fig.width=3, fig.height=3}
 
 new_map <- leaflet() %>% addTiles()
 
@@ -99,27 +99,13 @@ doi <- ezid_out[[2]]
 
 **Links**: View on [Neotoma Explorer](http://apps.neotomadb.org/explorer/?datasetid=`r ds_id`) | [Raw JSON](http://api.neotomadb.org/v1/data/downloads/`r ds_id`)
 
-<div itemprop="Dataset" itemscope itemtype="https://schema.org/Dataset" itemid=`r ezid_out[[2]]`>
 **Constituent Database**: `r unlist(sqlQuery(con, query = constdb_call(ds_id)))`
 
-`r paste0('<meta itemprop="includedInDataCatalog" content="Neotoma Paleoecological Database" />')`
-`r paste0('<meta itemprop="about" content="Paleoecology" />')`
-`r paste0('<meta itemprop="author" content="',contacts[which(contacts[,"Contribution"] == "ProjectLeader"),1],'" />')`
-`r paste0('<meta itemprop="inLanguage" content="English" />')`
-`r paste0('<meta itemprop="license" content="https://creativecommons.org/licenses/by/4.0/deed.en_US" />')`
-
-</div>
 **Dataset Type**: `r sharedds$DatasetType[which(sharedds$DatasetID == ds_id)]`
-
-<div itemprop="geo" itemscope itemtype="http://schema.org/GeoCoordinates" itemid=`r ezid_out[[2]]`>
 
 **Latitude**: `r mean(locs[1], locs[3])`
 
 **Longitude**: `r mean(locs[2], locs[4])`
-
-`r paste0('<meta itemprop="latitude" content="', mean(locs[1], locs[3]), '" />')`
-`r paste0('<meta itemprop="longitude" content="', mean(locs[2], locs[4]), '" />')`
-</div>
 
 ```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
 agerange <- sqlQuery(con, query = agerange_call(ds_id))
@@ -132,15 +118,13 @@ if (nrow(agerange) == 0) {
 
 **Age Range**: 4700 - 7400 ybp
 
-<div itemprop="geo" itemscope itemtype="http://schema.org/GeoCoordinates" itemid=`r ezid_out[[2]]`>
 **Description**: `r unlist(sqlQuery(con, query = sitedesc_call(ds_id)))`
-`r paste0('<meta itemprop="description" content="', unlist(sqlQuery(con, query = sitedesc_call(ds_id))), '" />')`
-</div>
+
 <br>
 
 ## Affiliated Researchers
 
-```{r, results='as-is', echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+```{r getContacts, results='as-is', echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
 
 contacts <- sqlQuery(con, query = contributor_call(ds_id))
 contacts <- apply(contacts, 2, function(x){ iconv(x, "UTF-8", 'latin1')})
@@ -170,11 +154,9 @@ if (nrow(publications) > 0) {
 
 ```
 
-## Citation
+## Data Citation
 
 ```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
-
-#### NOTE: CAN I ADD A `<script> command that will generate the current date/time?
 
 plain_text <- paste0(contacts[which(contacts[,"Contribution"] == "ProjectLeader"),1], " ",
        xml_text(xml2::xml_find_all(dataset, ".//d1:publicationYear", xml_ns(dataset))),
