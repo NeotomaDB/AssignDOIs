@@ -223,11 +223,11 @@ We ask all data users to consider the Neotoma Data Use policy -- [link](http://w
 <script type="application/ld+json">
   {
     "@context": "http://schema.org",
-    "@type": "Dataset
+    "@type": "Dataset",
     "license": "https://creativecommons.org/licenses/by/4.0/deed.en_US",
     "author": {
       "@type":"Person",
-      
+      "name":`r contacts[which(contacts[,"Contribution"] == "ProjectLeader"),1]`
     },
     "includedInDataCatalog": {
       "@type": "DataCatalogue",
