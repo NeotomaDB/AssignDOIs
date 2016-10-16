@@ -172,6 +172,15 @@ assign_doi <- function(ds_id, post = TRUE) {
                   "JSON", 
                   parent = root[["formats"]])
   
+  # Description
+  newXMLNode("Description", 
+             paste0("Raw data for the ", 
+                    default$SiteName, 
+                    " obtained from the Neotoma Paleoecological Database."),
+             parent = root)
+  newXMLNode("descriptionType", 
+             "Abstract", parent  = root[["Description"]])
+  
   # Number 16
   XML::addChildren(XML::newXMLNode("rightsList", parent = root),
                    children = XML::newXMLNode("rights", "CC-BY4", 
