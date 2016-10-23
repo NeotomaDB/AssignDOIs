@@ -1,6 +1,6 @@
 # AssignDOIs
 
-This repository serves two purposes:  It is the code that will run to assign DOIs to Neotoma datasets through DataCite and it is also the paper that describes this process.
+This repository serves two purposes:  It is the code that will run to assign DOIs to Neotoma datasets through DataCite (mostly in the `R/builder` folder) and it is also the paper that describes this process.
 
 ## Contributors
 * [Simon Goring](http://github.com/SimonGoring)
