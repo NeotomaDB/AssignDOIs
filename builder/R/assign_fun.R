@@ -1,18 +1,11 @@
 assign_doi <- function(ds_id, post = TRUE) {
 
-  sens <- unlist(read.table('../doi_sens.txt', stringsAsFactors = FALSE))
-  
   library(RODBC, quietly = TRUE, verbose = FALSE)
   library(httr, quietly = TRUE, verbose = FALSE)
   library(XML, quietly = TRUE, verbose = FALSE)
 
-  conname <- paste0('driver={SQL Server};',
-                    'server=',sens[1],';',
-                    'database=',sens[2],';',
-                    'trusted_connection=true')
-  
-  con <- RODBC::odbcDriverConnect('driver={SQL Server};server=SIMONGORING-PC\\SQLEXPRESS;database=Neotoma;trusted_connection=true')
-  
+  con <- odbcDriverConnect('driver={SQL Server};server=db5.emswin.psu.edu\\MSSQLSERVER_2012;database=Neotoma;trusted_connection=true')
+
   source('R/sql_calls.R')
 
   schema <- XML::xmlSchemaParse('../data/metadata.xsd')
@@ -152,7 +145,7 @@ assign_doi <- function(ds_id, post = TRUE) {
     # There's no current DOI
   } else {
     lapply(unlist(dois)[!is.na(unlist(dois))], function(x){
-      xml::newXMLNode("relatedIdentifier", paste0("doi:", x),
+      XML::newXMLNode("relatedIdentifier", paste0("doi:", x),
                       attrs = list(relationType = "IsDocumentedBy",
                                    relatedIdentifierType = "DOI"),
                       parent = root[["relatedIdentifiers"]])
@@ -216,7 +209,7 @@ assign_doi <- function(ds_id, post = TRUE) {
     urlbase = 'https://ezid.cdlib.org/'
     
     XML::saveXML(doc = doc, 
-                 file = paste0('c:/vdirs/doi/datasets/', ds_id, '_output.xml'),
+                 file = paste0('c:/vdirs/doi/datasets/', ds_id, "/", ds_id, '_output.xml'),
                  prefix = '<?xml version="1.0" encoding="UTF-8"?>')
     
   }
@@ -225,12 +218,15 @@ assign_doi <- function(ds_id, post = TRUE) {
     
     # We need to clean up the XML formatting, removing hard returns and changing quotes:
     parse_doc <- gsub('\\n', '', paste0('datacite: ',
-                                        XML::saveXML(xmlParse(paste0('c:/vdirs/doi/datasets/', 
+                                        XML::saveXML(xmlParse(paste0('c:/vdirs/doi/datasets/',
+                                                                     ds_id, '/',
                                                                      ds_id, '_output.xml')))))
   
     parse_doc <- gsub('\\"', "'", parse_doc)
     
     body <- paste0('_target: http://data.neotomadb.org/datasets/',ds_id, '\n',parse_doc)
+    
+    sens <- scan('doi_sens.txt', what = "character")
     
     r = httr::POST(url = paste0(urlbase, 'shoulder/doi:10.5072/FK2'), 
     	             httr::authenticate(user = sens[3], password = sens[4]),
