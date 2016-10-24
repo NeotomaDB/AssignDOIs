@@ -1,7 +1,12 @@
-# Note, FAUNMAP records are not really showing up here.  I think it's because the site name isn't where
-# I think it is.  Check with Eric.
+# Here's how things work:
+# Look in the directory for all folders created with a dataset ID
+# Look in the `output` file where datasets are output.
+# 
 
-end_point <- 'C:\\vdirs\\doi\\datasets'
+end_point  <- 'C:\\vdirs\\doi\\datasets'
+good_files <- read.csv('outputs.csv', header = TRUE)
+
+
 
 for (i in sample(19924, size = 10, replace = FALSE)) {
 
@@ -31,6 +36,22 @@ for (i in sample(19924, size = 10, replace = FALSE)) {
                 recursive = TRUE, overwrite = TRUE) 
     }
   } else {
+    table <- read.csv('outputs.csv', header = TRUE, stringsAsFactors = FALSE)
+    
+    library(RODBC, quietly = TRUE, verbose = FALSE)
+    
+    driver <- scan("doi_sens.txt", what = "character")
+    
+    con <- odbcDriverConnect(driver[1])
+    
+    source('R/sql_calls.R')
+    
+    dates <- sqlQuery(con, query = date_call(ds_id))
+
+    if (any(as.Date(dates[,1]) > Sys.Date())) {
+      table <- table
+    }
+    
     # Add check for date & SQL code to check relevant modification dates.
 #    file.copy(from = paste0('C:\\Users\\Simon Goring\\Documents\\GitHub\\neotomadb.github.io\\dataset\\', ds_id, '\\index.html'),
 #              to   = paste0('C:\\Users\\Simon Goring\\Documents\\GitHub\\neotomadb.github.io\\dataset\\', ds_id, '\\index_', format(Sys.time(), '%Y-%m-%d'), '.html'))

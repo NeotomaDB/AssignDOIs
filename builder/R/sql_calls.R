@@ -1,18 +1,19 @@
 # SQL queries:
 default_call <- function(x) {
   paste0("SELECT CONCAT(SiteName, ' ', DatasetType, ' dataset') AS SiteName,
-  'Title' AS titleType, 
+         'Title' AS titleType, 
          ContactName AS creatorName, 
          'ORCID' AS nameIdentifierScheme, 
          'http://orcid.org' AS schemeURI, 
          Address AS affiliation, 
          YEAR(ds.RecDateCreated) as publicationyear 
          FROM (SELECT * FROM NDB.Datasets WHERE DatasetID = ", x, ") AS ds 
-         INNER JOIN NDB.DatasetPIs ON ds.DatasetID = datasetpis.DatasetID
+         LEFT JOIN NDB.DatasetPIs ON ds.DatasetID = datasetpis.DatasetID
+         LEFT JOIN NDB.Contacts ON datasetpis.ContactID = contacts.ContactID
          INNER JOIN NDB.CollectionUnits AS cu ON ds.CollectionUnitID = cu.CollectionUnitID
          INNER JOIN NDB.Sites AS sts ON cu.SiteID = sts.SiteID
          INNER JOIN NDB.DatasetTypes AS dst ON ds.DatasetTypeID = dst.DatasetTypeID 
-         INNER JOIN NDB.Contacts ON datasetpis.ContactID = contacts.ContactID")
+         ")
 }
 
 contributor_call <- function(x) {

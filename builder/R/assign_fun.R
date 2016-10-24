@@ -4,8 +4,10 @@ assign_doi <- function(ds_id, post = TRUE) {
   library(httr, quietly = TRUE, verbose = FALSE)
   library(XML, quietly = TRUE, verbose = FALSE)
 
-  con <- odbcDriverConnect('driver={SQL Server};server=db5.emswin.psu.edu\\MSSQLSERVER_2012;database=Neotoma;trusted_connection=true')
-
+  driver <- scan("doi_sens.txt", what = "character")
+  
+  con <- odbcDriverConnect(driver[1])
+  
   source('R/sql_calls.R')
 
   schema <- XML::xmlSchemaParse('../data/metadata.xsd')
@@ -173,13 +175,14 @@ assign_doi <- function(ds_id, post = TRUE) {
                   parent = root[["formats"]])
   
   # Description
-  newXMLNode("Description", 
+  newXMLNode("descriptions", parent  = root)
+  newXMLNode("description", 
              paste0("Raw data for the ", 
                     default$SiteName, 
                     " obtained from the Neotoma Paleoecological Database."),
-             parent = root)
-  newXMLNode("descriptionType", 
-             "Abstract", parent  = root[["Description"]])
+             parent = root[["descriptions"]],
+             attrs = list("descriptionType" = "Abstract",
+                          "xml:lang" = "EN"))
   
   # Number 16
   XML::addChildren(XML::newXMLNode("rightsList", parent = root),
