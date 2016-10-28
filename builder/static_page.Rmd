@@ -31,10 +31,12 @@ if (is.null(ezid_out[[2]])) {stop('Whoops')}
 
 table <- read.csv('outputs.csv', header = TRUE, stringsAsFactors = FALSE)
 
+connection <- scan('..\\doi_sens.txt', what = "character")
+
 table <- rbind(table, 
-               c(ds_id, 
-                 ifelse(length(ezid_out[[2]]) > 1, "Err", ezid_out[[2]]),
-                 Sys.time()))
+               data.frame(id   = ds_id, 
+                          doi  = ifelse(length(ezid_out[[2]]) > 1, "Err", ezid_out[[2]]),
+                          date = lubridate::as_date(Sys.time())))
 
 write.csv(table, 'outputs.csv', row.names = FALSE)
 
@@ -45,7 +47,7 @@ write.csv(table, 'outputs.csv', row.names = FALSE)
 
 source('R/sql_calls.R')
 
-con <- odbcDriverConnect('driver={SQL Server};server=db5.emswin.psu.edu\\MSSQLSERVER_2012;database=Neotoma;trusted_connection=true')
+con <- odbcDriverConnect(doi_sens[1])
   
 default <- sqlQuery(con, query = default_call(ds_id))
 # Clean the affiliation:

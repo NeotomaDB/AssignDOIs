@@ -4,9 +4,9 @@ assign_doi <- function(ds_id, post = TRUE) {
   library(httr, quietly = TRUE, verbose = FALSE)
   library(XML, quietly = TRUE, verbose = FALSE)
 
-  driver <- scan("doi_sens.txt", what = "character")
+  doi_sens <- scan("../doi_sens.txt", what = "character")
   
-  con <- odbcDriverConnect(driver[1])
+  con <- odbcDriverConnect(doi_sens[1])
   
   source('R/sql_calls.R')
 
@@ -212,7 +212,7 @@ assign_doi <- function(ds_id, post = TRUE) {
     urlbase = 'https://ezid.cdlib.org/'
     
     XML::saveXML(doc = doc, 
-                 file = paste0('c:/vdirs/doi/datasets/', ds_id, "/", ds_id, '_output.xml'),
+                 file = paste0(doi_sens[5], ds_id, "/", ds_id, '_output.xml'),
                  prefix = '<?xml version="1.0" encoding="UTF-8"?>')
     
   }
@@ -221,7 +221,7 @@ assign_doi <- function(ds_id, post = TRUE) {
     
     # We need to clean up the XML formatting, removing hard returns and changing quotes:
     parse_doc <- gsub('\\n', '', paste0('datacite: ',
-                                        XML::saveXML(xmlParse(paste0('c:/vdirs/doi/datasets/',
+                                        XML::saveXML(xmlParse(paste0(doi_sens[5],
                                                                      ds_id, '/',
                                                                      ds_id, '_output.xml')))))
   
@@ -229,10 +229,8 @@ assign_doi <- function(ds_id, post = TRUE) {
     
     body <- paste0('_target: http://data.neotomadb.org/datasets/',ds_id, '\n',parse_doc)
     
-    sens <- scan('doi_sens.txt', what = "character")
-    
     r = httr::POST(url = paste0(urlbase, 'shoulder/doi:10.5072/FK2'), 
-    	             httr::authenticate(user = sens[3], password = sens[4]),
+    	             httr::authenticate(user = doi_sens[3], password = doi_sens[4]),
                    httr::add_headers(c('Content-Type' = 'text/plain; charset=UTF-8',
                                  'Accept' = 'text/plain')),
     	             body = body,
