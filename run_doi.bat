@@ -1,0 +1,2 @@
+echo [%date% - %time%] Log start >> C:\Users\sug335\Documents\batchlog.txt
+"C:\Program Files\R\R-3.3.1\bin\Rscript.exe" --no-save --no-restore --verbose C:\Users\sug335\Documents\AssignDOIs\builder\R\processing_code.R > C:\Users\sug335\Documents\othertest.Rout 2> C:\Users\sug335\Documents\error_file.Rout

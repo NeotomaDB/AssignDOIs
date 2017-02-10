@@ -16,10 +16,10 @@ output:
 ---
 
 
-```{r buildXML_loadpkgs, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+```{r buildXML_loadpkgs, echo=FALSE, results = "hide", message = FALSE, warnings=FALSE, tidy=TRUE}
 
-library(leaflet)
-library(xml2)
+library(leaflet, quietly = TRUE, verbose = FALSE)
+library(xml2, quietly = TRUE, verbose = FALSE)
 library(RODBC, quietly = TRUE, verbose = FALSE)
 library(httr, quietly = TRUE, verbose = FALSE)
 
@@ -31,12 +31,12 @@ if (is.null(ezid_out[[2]])) {stop('Whoops')}
 
 table <- read.csv('outputs.csv', header = TRUE, stringsAsFactors = FALSE)
 
-connection <- scan('..\\doi_sens.txt', what = "character")
+connection <- scan('C:\\Users\\sug335\\Documents\\AssignDOIs\\doi_sens.txt', what = "character")
 
 table <- rbind(table, 
                data.frame(id   = ds_id, 
                           doi  = ifelse(length(ezid_out[[2]]) > 1, "Err", ezid_out[[2]]),
-                          date = lubridate::as_date(Sys.time())))
+                          date = as.character(lubridate::as_date(Sys.time()))))
 
 write.csv(table, 'outputs.csv', row.names = FALSE)
 
@@ -103,7 +103,7 @@ doi <- ezid_out[[2]]
 
 **DOI**: [`r substr(doi, 5, nchar(doi))`](`r paste0("http://dx.doi.org/", substr(doi, 5, nchar(doi)))`)
 
-**Links**: View on [Neotoma Explorer](http://apps.neotomadb.org/explorer/?datasetid=`r ds_id`) | [Raw JSON](http://api.neotomadb.org/v1/data/downloads/`r ds_id`)
+**Links**: [View on Neotoma Explorer](http://apps.neotomadb.org/explorer/?datasetid=`r ds_id`) | [Download JSON](http://api.neotomadb.org/v1/data/downloads/`r ds_id`) | [Download zipped CSV](http://api.neotomadb.org/v1/data/downloads/`r ds_id`?format=csv)
 
 **Constituent Database**: `r unlist(sqlQuery(con, query = constdb_call(ds_id)))`
 
@@ -114,15 +114,17 @@ doi <- ezid_out[[2]]
 **Longitude**: `r mean(locs[2], locs[4])`
 
 ```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+
 agerange <- sqlQuery(con, query = agerange_call(ds_id))
 if (nrow(agerange) == 0) {
   range_out <- "No relevant chronology."
 } else {
   range_out <- paste0(agerange[1], ' -- ', agerange[2], 'ybp, ', agerange[3])
 }
+
 ```
 
-**Age Range**: 4700 - 7400 ybp
+**Age Range**: `r range_out`
 
 **Description**: `r unlist(sqlQuery(con, query = sitedesc_call(ds_id)))`
 

@@ -4,7 +4,7 @@ assign_doi <- function(ds_id, post = TRUE) {
   library(httr, quietly = TRUE, verbose = FALSE)
   library(XML, quietly = TRUE, verbose = FALSE)
 
-  doi_sens <- scan("../doi_sens.txt", what = "character")
+  doi_sens <- scan("C:\\Users\\sug335\\Documents\\AssignDOIs\\doi_sens.txt", what = "character")
   
   con <- odbcDriverConnect(doi_sens[1])
   
