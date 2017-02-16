@@ -40,6 +40,12 @@ table <- rbind(table,
 
 write.csv(table, 'outputs.csv', row.names = FALSE)
 
+#sqlQuery(con, 
+#         query = paste0("INSERT INTO NDB.DatasetDOI (DatasetID, DOI) VALUES (",
+#                         ds_id, ", 'XXXX",
+#                         ifelse(length(ezid_out[[2]]) > 1, 
+#                                "Err", ezid_out[[2]]),"')"))
+
 # > 10.5072/FK20G3NT7Q
 
 # Note, this is being run by a knit command in another document, so 
@@ -83,16 +89,21 @@ if (locs[1] == locs[3] & locs[2] == locs[4]) {
   new_map <- addMarkers(new_map, 
                         popup = popup_content, 
                         lng = locs[2], lat = locs[1]) %>% 
-    setView(lng = locs[2], lat = locs[1], zoom = 3)
+    setView(lng = locs[2], lat = locs[1], zoom = 5)
 } else {
   new_map <- addPolygons(new_map, 
                          lng = c(locs[c(2,4)]), 
                          lat = c(locs[c(1,3)]), popup = popup_content) %>%
+    addMarkers(new_map, 
+               popup = popup_content, 
+               lng = locs[2], 
+               lat = locs[1]) %>% 
     setView(lng = locs[2], lat = locs[1], 
-            zoom = 3)
+            zoom = 5)
 }
 
 new_map
+
 ```
 </div>
 
@@ -119,7 +130,7 @@ agerange <- sqlQuery(con, query = agerange_call(ds_id))
 if (nrow(agerange) == 0) {
   range_out <- "No relevant chronology."
 } else {
-  range_out <- paste0(agerange[1], ' -- ', agerange[2], 'ybp, ', agerange[3])
+  range_out <- paste0(agerange[1], ' -- ', agerange[2], ' ', as.character(agerange$AgeType))
 }
 
 ```
