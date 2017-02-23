@@ -40,11 +40,11 @@ table <- rbind(table,
 
 write.csv(table, 'outputs.csv', row.names = FALSE)
 
-#sqlQuery(con, 
-#         query = paste0("INSERT INTO NDB.DatasetDOI (DatasetID, DOI) VALUES (",
-#                         ds_id, ", 'XXXX",
-#                         ifelse(length(ezid_out[[2]]) > 1, 
-#                                "Err", ezid_out[[2]]),"')"))
+sqlQuery(con, 
+         query = paste0("INSERT INTO NDB.DatasetDOI (DatasetID, DOI) VALUES (",
+                         ds_id, ", 'XXXX",
+                         ifelse(length(ezid_out[[2]]) > 1, 
+                                "Err", ezid_out[[2]]),"')"))
 
 # > 10.5072/FK20G3NT7Q
 
