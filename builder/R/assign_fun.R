@@ -229,7 +229,7 @@ assign_doi <- function(ds_id, post = TRUE) {
     
     body <- paste0('_target: http://data.neotomadb.org/datasets/',ds_id, '\n',parse_doc)
     
-    r = httr::POST(url = paste0(urlbase, 'shoulder/doi:10.5072/FK2'), 
+    r = httr::POST(url = paste0(urlbase, 'shoulder/doi:10.21233/N3'), 
     	             httr::authenticate(user = doi_sens[3], password = doi_sens[4]),
                    httr::add_headers(c('Content-Type' = 'text/plain; charset=UTF-8',
                                  'Accept' = 'text/plain')),

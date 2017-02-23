@@ -57,8 +57,10 @@ if (any(datasets %in% good_files$id)) {
   datasets <- datasets[!datasets %in% ids]
 }
 
-for (i in datasets) {
-
+#for (i in datasets) {
+for (i in 1:3) {
+    
+  
   ds_id <- i
   cat(i, '\n')
 
