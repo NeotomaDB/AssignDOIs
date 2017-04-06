@@ -37,7 +37,7 @@ assign_doi <- function(ds_id, post = TRUE) {
   default$affiliation <- gsub('\r\n', ', ', default$affiliation)
   
   # This is the empty shoulder for assigning DOIs:
-  XML::newXMLNode("identifier", '10.5072/FK2', 
+  XML::newXMLNode("identifier", '10.21233/N3', 
                   attrs = c('identifierType' = 'DOI'), 
                   parent = root)
   
@@ -115,17 +115,6 @@ assign_doi <- function(ds_id, post = TRUE) {
                  parent = root)
   
   XML::newXMLNode("relatedIdentifiers", parent = root)
-  
-  # Generate the static page for the dataset:
-  #rmarkdown::render('static_page.Rmd', 
-  #            output_file = paste0('pages/dataset_', ds_id, '.html'))
-  
-  #' Link to the static page (not implemented because we don't have a site yet)
-  # newXMLNode("relatedIdentifier", paste0("api.neotomadb.org/v1/downloads/", ds_id),
-  #            attrs = list(relationType = "IsMetadataFor",
-  #                         relatedIdentifierType = "URL",
-  #                         relatedMetadataScheme = "json"),
-  #            parent = root[["relatedIdentifiers"]])
   
   #' Link to the JSON:
   XML::newXMLNode("relatedIdentifier", 
@@ -229,11 +218,11 @@ assign_doi <- function(ds_id, post = TRUE) {
     
     body <- paste0('_target: http://data.neotomadb.org/datasets/',ds_id, '\n',parse_doc)
     
-    r = httr::POST(url = paste0(urlbase, 'shoulder/doi:10.5072/FK2'), 
-    	             httr::authenticate(user = doi_sens[3], password = doi_sens[4]),
+    r = httr::POST(url = paste0(urlbase, 'shoulder/doi:10.21233/N3'), 
+                   httr::authenticate(user = doi_sens[3], password = doi_sens[4]),
                    httr::add_headers(c('Content-Type' = 'text/plain; charset=UTF-8',
-                                 'Accept' = 'text/plain')),
-    	             body = body,
+                                       'Accept' = 'text/plain')),
+                   body = body,
                    format = 'xml')
     
     out_doi <- substr(content(r), 

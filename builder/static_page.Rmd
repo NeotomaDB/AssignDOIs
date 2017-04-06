@@ -16,38 +16,52 @@ output:
 ---
 
 
-```{r buildXML_loadpkgs, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+```{r buildXML_loadpkgs, echo=FALSE, results = "hide", message = FALSE, warnings=FALSE, tidy=TRUE}
 
-library(leaflet)
-library(xml2)
+# Note, this code runs in `builder` as the working directory.
+
+library(leaflet, quietly = TRUE, verbose = FALSE)
+library(xml2, quietly = TRUE, verbose = FALSE)
 library(RODBC, quietly = TRUE, verbose = FALSE)
 library(httr, quietly = TRUE, verbose = FALSE)
 
+table <- read.csv('outputs.csv', header = TRUE, stringsAsFactors = FALSE, row.names = NULL)
+
 source("R/assign_fun.R", verbose = FALSE, echo = FALSE)
 
-ezid_out <- suppressWarnings(assign_doi(ds_id, post = TRUE))
-
-if (is.null(ezid_out[[2]])) {stop('Whoops')}
-
-table <- read.csv('outputs.csv', header = TRUE, stringsAsFactors = FALSE)
-
-connection <- scan('..\\doi_sens.txt', what = "character")
-
-table <- rbind(table, 
+if(!ds_id %in% table$id) {
+  
+  ezid_out <- suppressWarnings(assign_doi(ds_id, post = TRUE))
+  
+  table <- rbind(table, 
                data.frame(id   = ds_id, 
                           doi  = ifelse(length(ezid_out[[2]]) > 1, "Err", ezid_out[[2]]),
-                          date = lubridate::as_date(Sys.time())))
+                          date = as.character(lubridate::as_date(Sys.time()))))
 
-write.csv(table, 'outputs.csv', row.names = FALSE)
+  write.csv(table, 'outputs.csv', row.names = FALSE)
 
-# > 10.5072/FK20G3NT7Q
+  if (is.null(ezid_out[[2]])) {stop('Whoops')}
+  
+} else {
+  ezid_out <- list(xml2::read_xml(paste0('C:/vdirs/doi/datasets/', ds_id, '/', ds_id, '_output.xml')),
+                   table$doi[match(ds_id, table$id)])
+}
+
+connection <- scan('../doi_sens.txt', what = "character")
+
+
+#sqlQuery(con, 
+#         query = paste0("INSERT INTO NDB.DatasetDOI (DatasetID, DOI) VALUES (",
+#                         ds_id, ", 'XXXX",
+#                         ifelse(length(ezid_out[[2]]) > 1, 
+#                                "Err", ezid_out[[2]]),"')"))
 
 # Note, this is being run by a knit command in another document, so 
 # ds_id is being passed in from the external script:
 
 source('R/sql_calls.R')
 
-con <- odbcDriverConnect(doi_sens[1])
+con <- odbcDriverConnect(connection[1])
   
 default <- sqlQuery(con, query = default_call(ds_id))
 # Clean the affiliation:
@@ -68,7 +82,11 @@ dataset <- read_xml(paste0(end_point, '/', ds_id, '/', ds_id, '_output.xml'))
 <div style="float: right;">
 ```{r leaflet_map, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE, fig.width=3, fig.height=3}
 
-new_map <- leaflet() %>% addTiles()
+new_map <- leaflet() %>% 
+  addProviderTiles('Esri.WorldImagery') %>% 
+  addProviderTiles('Stamen.TonerBackground',
+                   options = providerTileOptions(opacity = 0.45)) %>% 
+  addProviderTiles("Stamen.TonerLabels")
 
 # Now we have to pull out the lat/longs:
 locs <- xml_text(xml2::xml_find_all(dataset, ".//d1:geoLocations", xml_ns(dataset)))
@@ -82,17 +100,22 @@ popup_content <- paste0("<b>",default$SiteName[1],"</b>",
 if (locs[1] == locs[3] & locs[2] == locs[4]) {
   new_map <- addMarkers(new_map, 
                         popup = popup_content, 
-                        lng = locs[2], lat = locs[1]) %>% 
-    setView(lng = locs[2], lat = locs[1], zoom = 3)
+                        lng = locs[2], lat = locs[3]) %>% 
+    setView(lng = locs[2], lat = locs[1], zoom = 5)
 } else {
   new_map <- addPolygons(new_map, 
-                         lng = c(locs[c(2,4)]), 
-                         lat = c(locs[c(1,3)]), popup = popup_content) %>%
+                         lng = c(locs[c(2,4, 4, 2)]), 
+                         lat = c(locs[c(1,1, 3, 3)]), popup = popup_content) %>%
+    addMarkers(new_map, 
+               popup = popup_content, 
+               lng = locs[2], 
+               lat = locs[3]) %>% 
     setView(lng = locs[2], lat = locs[1], 
-            zoom = 3)
+            zoom = 7)
 }
 
 new_map
+
 ```
 </div>
 
@@ -103,26 +126,28 @@ doi <- ezid_out[[2]]
 
 **DOI**: [`r substr(doi, 5, nchar(doi))`](`r paste0("http://dx.doi.org/", substr(doi, 5, nchar(doi)))`)
 
-**Links**: View on [Neotoma Explorer](http://apps.neotomadb.org/explorer/?datasetid=`r ds_id`) | [Raw JSON](http://api.neotomadb.org/v1/data/downloads/`r ds_id`)
+**Links**: [View on Neotoma Explorer](http://apps.neotomadb.org/explorer/?datasetid=`r ds_id`) | [Download JSON](http://api.neotomadb.org/v1/data/downloads/`r ds_id`) | [Download zipped CSV](http://api.neotomadb.org/v1/data/downloads/`r ds_id`?format=csv)
 
 **Constituent Database**: `r unlist(sqlQuery(con, query = constdb_call(ds_id)))`
 
 **Dataset Type**: `r sharedds$DatasetType[which(sharedds$DatasetID == ds_id)]`
 
-**Latitude**: `r mean(locs[1], locs[3])`
+**Latitude**: `r ifelse(locs[1] == locs[3], locs[1], paste0('[',locs[1], ',', locs[3], ']'))`
 
-**Longitude**: `r mean(locs[2], locs[4])`
+**Longitude**: `r ifelse(locs[2] == locs[4], locs[2], paste0('[',locs[2], ',', locs[4], ']'))`
 
 ```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
+
 agerange <- sqlQuery(con, query = agerange_call(ds_id))
 if (nrow(agerange) == 0) {
   range_out <- "No relevant chronology."
 } else {
-  range_out <- paste0(agerange[1], ' -- ', agerange[2], 'ybp, ', agerange[3])
+  range_out <- paste0(agerange[1], ' -- ', agerange[2], ' ', as.character(agerange$AgeType))
 }
+
 ```
 
-**Age Range**: 4700 - 7400 ybp
+**Age Range**: `r range_out`
 
 **Description**: `r unlist(sqlQuery(con, query = sitedesc_call(ds_id)))`
 
@@ -164,7 +189,14 @@ if (nrow(publications) > 0) {
 
 ```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
 
-plain_text <- paste0(contacts[which(contacts[,"Contribution"] == "ProjectLeader"),1], " ",
+authors <- paste0(contacts[which(contacts[,"Contribution"] == "ProjectLeader"),1], collapse = ', ')
+
+if(unlist(sqlQuery(con, query = constdb_call(ds_id))) %in% "FAUNMAP") {
+  authors <- paste0(contacts[which(contacts[,"Contribution"] == "Researcher"),1], collapse = ', ')
+  
+}
+
+plain_text <- paste0(authors, ". ",
        xml_text(xml2::xml_find_all(dataset, ".//d1:publicationYear", xml_ns(dataset))),
        ". ",
        default$SiteName[1], ". In, *",
@@ -172,7 +204,7 @@ plain_text <- paste0(contacts[which(contacts[,"Contribution"] == "ProjectLeader"
        "Neotoma Paleoecological Database. ", ezid_out[[2]],"<br>")
        
 bibtex <- paste0("@inbook{<br>&nbsp;&nbsp;author={",
-                 contacts[which(contacts[,"Contribution"] == "ProjectLeader"),1],
+                 authors,
                  "},<br>&nbsp;&nbsp;year={",
                  xml_text(xml2::xml_find_all(dataset, ".//d1:publicationYear", xml_ns(dataset))),
                  "},<br>&nbsp;&nbsp;title={",
@@ -180,7 +212,7 @@ bibtex <- paste0("@inbook{<br>&nbsp;&nbsp;author={",
                  unlist(sqlQuery(con, query = constdb_call(ds_id))), 
                  "},<br>&nbsp;&nbsp;publisher={",
                  "Neotoma Paleoecological Database},<br>&nbsp;&nbsp;doi={",
-                 ezid_out[[2]],"}<br>}<br>")
+                 ezid_out[[2]],"}<br>}<br>", collapse = ', ')
 
 ```
 

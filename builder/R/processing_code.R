@@ -8,8 +8,10 @@ library(dplyr, quietly = TRUE, verbose = FALSE)
 library(RODBC, quietly = TRUE, verbose = FALSE)
 library(lubridate, quietly = TRUE, verbose = FALSE)
 
+Sys.setenv(RSTUDIO_PANDOC="C:/Program Files/RStudio/bin/pandoc")
+
 end_point  <- 'C:\\vdirs\\doi\\datasets'
-good_files <- read.csv('outputs.csv', header = TRUE)
+good_files <- read.csv('builder/outputs.csv', header = TRUE)
 
 build_ages <- "SELECT ds.DatasetID, ds.RecDateModified as dataset, 
                dspi.RecDateModified as dsPI, 
@@ -29,8 +31,8 @@ build_ages <- "SELECT ds.DatasetID, ds.RecDateModified as dataset,
                LEFT JOIN NDB.DatasetPublications as dsp on dsp.DatasetID = ds.DatasetID
                LEFT JOIN NDB.Chronologies as chr on chr.CollectionUnitID = cu.CollectionUnitID"
 
-doi_sens <- scan('..\\doi_sens.txt', what = "character")
-con <- odbcDriverConnect(doi_sens[1])
+connection <- scan('doi_sens.txt', what = "character")
+con <- odbcDriverConnect(connection[1])
 
 ds_dates <- sqlQuery(con, query = build_ages,
                      stringsAsFactors = FALSE)
