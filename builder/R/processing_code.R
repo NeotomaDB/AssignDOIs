@@ -3,7 +3,7 @@
 # Look in the `output` file where datasets are output.
 # 
 
-sink(file = "C:\\Users\\sug335\\Documents\\batchlog.txt", append = TRUE)
+# sink(file = "C:\\Users\\sug335\\Documents\\batchlog.txt", append = TRUE)
 
 list.of.packages <- c("tidyr", "dplyr", "RODBC", "lubridate", "leaflet", "xml2", "httr", "rmarkdown", "knitr", "pander")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
@@ -17,11 +17,11 @@ library(yaml, quietly = TRUE, verbose = FALSE)
 
 Sys.setenv(RSTUDIO_PANDOC="C:\\Program Files (x86)\\Pandoc")
 
-Sys.setenv(RSTUDIO_PANDOC="C:/Program Files/RStudio/bin/pandoc")
+Sys.setenv(RSTUDIO_PANDOC="C:\\Program Files\\RStudio\\bin\\pandoc")
 
 end_point  <- 'C:\\vdirs\\doi\\datasets'
 
-good_files <- read.csv('builder/outputs.csv', header = TRUE)
+good_files <- read.csv('outputs.csv', header = TRUE)
 
 build_ages <- "SELECT ds.DatasetID, ds.RecDateModified as dataset, 
                dspi.RecDateModified as dsPI, 
@@ -41,7 +41,7 @@ build_ages <- "SELECT ds.DatasetID, ds.RecDateModified as dataset,
                LEFT JOIN NDB.DatasetPublications as dsp on dsp.DatasetID = ds.DatasetID
                LEFT JOIN NDB.Chronologies as chr on chr.CollectionUnitID = cu.CollectionUnitID"
 
-connection <- scan('doi_sens.txt', what = "character")
+connection <- scan('..\\doi_sens.txt', what = "character")
 con <- odbcDriverConnect(connection[1])
 
 ds_dates <- sqlQuery(con, query = build_ages,
@@ -70,7 +70,7 @@ for (i in 1:3) {
   if (!ds_id %in% list.files(end_point)) {
     # This is a new entry without prior versioning.
     dir.create(paste0(end_point, '/', ds_id))
-    tester <- try(rmarkdown::render('C:\\Users\\sug335\\Documents\\AssignDOIs\\builder\\static_page.Rmd', 
+    tester <- try(rmarkdown::render('static_page.Rmd', 
                       output_file = paste0(end_point, '/', ds_id, '/index.html'),
                       envir = globalenv(), quiet = TRUE))
 
@@ -97,7 +97,7 @@ for (i in 1:3) {
       
     } else {
       
-      good_files <- read.csv('builder/outputs.csv', header = TRUE)
+      good_files <- read.csv('outputs.csv', header = TRUE)
       
       if (i %in% good_files$id) {
         good_files$doi[match(i, good_files$id)] <- "Err"
