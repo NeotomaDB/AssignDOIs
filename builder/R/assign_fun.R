@@ -4,13 +4,13 @@ assign_doi <- function(ds_id, post = TRUE) {
   library(httr, quietly = TRUE, verbose = FALSE)
   library(XML, quietly = TRUE, verbose = FALSE)
 
-  doi_sens <- scan('doi_sens.txt', what = "character")
+  doi_sens <- scan('..//doi_sens.txt', what = "character")
   
   con <- odbcDriverConnect(doi_sens[1])
   
-  source('R/sql_calls.R')
+  source('R//sql_calls.R')
 
-  schema <- XML::xmlSchemaParse('../data/metadata.xsd')
+  schema <- XML::xmlSchemaParse('..//data//metadata.xsd')
 
   # Generating the new XML framework and associated namespaces:
   doc <- XML::newXMLDoc()
@@ -124,7 +124,7 @@ assign_doi <- function(ds_id, post = TRUE) {
                                relatedMetadataScheme = "json"),
                   parent = root[["relatedIdentifiers"]])
   XML::newXMLNode("relatedIdentifier", 
-                  paste0("neotomadb.github.io/dataset/", ds_id),
+                  paste0("data.neotomadb.org/datasets/", ds_id, "/index.html"),
                   attrs = list(relationType = "IsMetadataFor",
                                relatedIdentifierType = "URL",
                                relatedMetadataScheme = "json"),
@@ -228,6 +228,17 @@ assign_doi <- function(ds_id, post = TRUE) {
     out_doi <- substr(content(r), 
                       regexpr("doi:", content(r)), 
                       regexpr("\\s\\|", content(r)) - 1)
+    
+    new_doc <- xmlParse(paste0(doi_sens[5],
+                     ds_id, '/',
+                     ds_id, '_output.xml'), useInternal = TRUE)
+    
+    top <- xmlRoot(new_doc)
+    xmlValue(top[[1]]) <-  regexpr("doi:", content(r))
+    
+    XML::saveXML(doc = new_doc, 
+                 file = paste0(doi_sens[5], ds_id, "/", ds_id, '_output.xml'),
+                 prefix = '<?xml version="1.0" encoding="UTF-8"?>')
     
   } else {
     
