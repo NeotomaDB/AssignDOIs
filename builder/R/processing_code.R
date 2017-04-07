@@ -3,14 +3,24 @@
 # Look in the `output` file where datasets are output.
 # 
 
+sink(file = "C:\\Users\\sug335\\Documents\\batchlog.txt", append = TRUE)
+
+list.of.packages <- c("tidyr", "dplyr", "RODBC", "lubridate", "leaflet", "xml2", "httr", "rmarkdown", "knitr", "pander")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages, verbose = FALSE, quiet = TRUE, repos="http://cran.rstudio.com/")
+
 library(tidyr, quietly = TRUE, verbose = FALSE)
 library(dplyr, quietly = TRUE, verbose = FALSE)
 library(RODBC, quietly = TRUE, verbose = FALSE)
 library(lubridate, quietly = TRUE, verbose = FALSE)
+library(yaml, quietly = TRUE, verbose = FALSE)
+
+Sys.setenv(RSTUDIO_PANDOC="C:\\Program Files (x86)\\Pandoc")
 
 Sys.setenv(RSTUDIO_PANDOC="C:/Program Files/RStudio/bin/pandoc")
 
 end_point  <- 'C:\\vdirs\\doi\\datasets'
+
 good_files <- read.csv('builder/outputs.csv', header = TRUE)
 
 build_ages <- "SELECT ds.DatasetID, ds.RecDateModified as dataset, 
@@ -50,15 +60,17 @@ if (any(datasets %in% good_files$id)) {
   datasets <- datasets[!datasets %in% ids]
 }
 
-for (i in datasets) {
-
+#for (i in datasets) {
+for (i in 1:3) {
+    
+  
   ds_id <- i
   cat(i, '\n')
 
   if (!ds_id %in% list.files(end_point)) {
     # This is a new entry without prior versioning.
     dir.create(paste0(end_point, '/', ds_id))
-    tester <- try(rmarkdown::render('static_page.Rmd', 
+    tester <- try(rmarkdown::render('C:\\Users\\sug335\\Documents\\AssignDOIs\\builder\\static_page.Rmd', 
                       output_file = paste0(end_point, '/', ds_id, '/index.html'),
                       envir = globalenv(), quiet = TRUE))
 
@@ -68,9 +80,25 @@ for (i in datasets) {
       # Note, this needs to be run as an admin.
       shell(paste0("mklink /d ", end_point, '\\', ds_id, "\\index_files ",
                    end_point, "\\index_files"), intern = TRUE)
-        
+      
+      # This is a bug in the output.  For some reason the `index.html` file won't open externally.
+      
+      file.copy(paste0(end_point, '/', ds_id, '/index.html'),
+                paste0(end_point, '/', ds_id, '/index2.html'))
+ 
+      unlink(paste0(end_point, '/', ds_id, '/index.html'), force = TRUE, recursive = TRUE)
+      
+      file.copy(paste0(end_point, '/', ds_id, '/index2.html'),
+                paste0(end_point, '/', ds_id, '/index.html'))
+      
+      unlink(paste0(end_point, '/', ds_id, '/index2.html'), force = TRUE, recursive = TRUE)
+
+      # END HACKY BUGFIX.
+      
     } else {
-      good_files <- read.csv('outputs.csv', header = TRUE)
+      
+      good_files <- read.csv('builder/outputs.csv', header = TRUE)
+      
       if (i %in% good_files$id) {
         good_files$doi[match(i, good_files$id)] <- "Err"
       }

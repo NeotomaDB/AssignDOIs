@@ -49,13 +49,6 @@ if(!ds_id %in% table$id) {
 
 connection <- scan('../doi_sens.txt', what = "character")
 
-
-#sqlQuery(con, 
-#         query = paste0("INSERT INTO NDB.DatasetDOI (DatasetID, DOI) VALUES (",
-#                         ds_id, ", 'XXXX",
-#                         ifelse(length(ezid_out[[2]]) > 1, 
-#                                "Err", ezid_out[[2]]),"')"))
-
 # Note, this is being run by a knit command in another document, so 
 # ds_id is being passed in from the external script:
 
@@ -64,6 +57,7 @@ source('R/sql_calls.R')
 con <- odbcDriverConnect(connection[1])
   
 default <- sqlQuery(con, query = default_call(ds_id))
+
 # Clean the affiliation:
 default$affiliation <- gsub('\r\n', ', ', default$affiliation)
 
@@ -180,7 +174,7 @@ publications <- sqlQuery(con, query = pub_call(ds_id), as.is = TRUE)
 if (nrow(publications) > 0) {
   knitr::kable(publications[,c(1,4)])
 } else {
-  cat("No publications in this record.")
+  print("No publications in this record.")
 }
 
 ```
