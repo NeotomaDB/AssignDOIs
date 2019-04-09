@@ -39,3 +39,5 @@ vignettes/*.pdf
 *.knit.md
 .Rproj.user
 paperRev/*
+
+connect_remote.json

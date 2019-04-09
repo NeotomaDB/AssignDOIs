@@ -3,15 +3,6 @@ title: "DOI workflow"
 author: "Simon Goring"
 date: "May 22, 2016"
 output:
-  word_document:
-    keep_md: yes
-    toc: no
-    toc_depth: '3'
-    reference_docx: word_template.docx  
-  pdf_document:
-    keep_md: yes
-    toc: yes
-    toc_depth: '3'
   html_document:
     code_folding: show
     highlight: pygment
@@ -20,14 +11,24 @@ output:
     theme: journal
     toc: no
     toc_depth: 3
-csl: elsevier-harvard.csl
-bibliography: doi_publications.bib
+  pdf_document:
+    keep_md: yes
+    toc: yes
+    toc_depth: '3'
+  word_document:
+    keep_md: yes
+    toc: no
+    toc_depth: '3'
+    reference_docx: styles/word_template.docx
+csl: styles/elsevier-harvard.csl
+bibliography: styles/doi_publications.bib
 ---
 
 ```{r, echo=FALSE, message = FALSE, warnings=FALSE, tidy=TRUE}
-runner = FALSE
+doi_sens <- readr::read_lines("doi_sens.txt")
 
-library(RODBC, quietly = TRUE, verbose = FALSE)
+library(dplyr, quietly = TRUE, verbose = FALSE)
+library(RPostgreSQL, quietly = TRUE, verbose = FALSE)
 library(httr, quietly = TRUE, verbose = FALSE)
 library(XML, quietly = TRUE, verbose = FALSE)
 
@@ -35,8 +36,14 @@ source('builder/R/sql_calls.R')
 
 schema <- xmlSchemaParse('data/metadata.xsd')
 #sens <- read.table('doi_sens.txt', stringsAsFactors = FALSE)
+con_string <- jsonlite::fromJSON("connect_remote.json")
 
-con <- odbcDriverConnect('driver={SQL Server};server=db5.emswin.psu.edu\\MSSQLSERVER_2012;database=Neotoma;trusted_connection=true')
+con <- dbConnect(PostgreSQL(),
+                 host = con_string$host,
+                 port = con_string$port,
+                 user = con_string$user,
+                 password = con_string$password,
+                 dbname = con_string$database)
 
 ```
 
@@ -66,13 +73,13 @@ DOI names have been minted for data since 2004 [@brase2015tenth]. While the mint
 
 A key component of long term data-sustainability is the use of domain specific data repositories [@goodman2014ten]. The Neotoma Paleoecological Database is a key domain repository within the biogeosciences, focusing on botanical and faunal fossil data across the Neogene.  The core of the Neotoma Paleoecological Database rests on two fundamental data contributions.  The first, COHMAP [@anderson1988climatic], was the result of an international, interdisciplinary effort that resulted in the contribution of 241 datasets across 207 publications from 333 allied researchers.  This research contribution led to one of the first model-data intercomparison projects, with a lasting legacy for paleoclimate and climate modeling [@wright1993reflections]. The second large data contribution was the result of the FAUNMAP project, centered on assembling fossil records from the United States spanning the Pleistocene.  FAUNMAP was the result of contributions representing 3202 researchers, across 2005 unique publications, resulting in fundamental contributions to our understanding of species responses to climate change over long time scales [@graham1996spatial].  In both cases the call for open and unrestricted data sharing was less stringent than it is currently, with fewer enforcement or regulatory elements, but the success of these efforts reflects the enormous value of open data.
 
-Currently, Neotoma contains `r length(neotoma::get_dataset())` datasets (as of `r Sys.Date()`).  There are `r nrow(neotoma::get_table("DatasetTypes"))` unique dataset types, and these data products represent the cummulative work of `r nrow(neotoma::get_table("Contacts"))` individuals or organizations.  Access to Neotoma is obtained primarily through three platforms.  The database itself is a SQL Server 2012 database that is available as snapshots from the Neotoma website -- [http://neotomadb.org]() -- while data search capacity is supported through a map-based web engine, the Neotoma Explorer - [http://apps.neotomadb.org/explorer](), or through the API and associated R package `neotoma` [@goring2015neotoma].  The datasbase itself is described elsewhere [@neotomamanual].
+Currently, Neotoma contains `r length(neotoma::get_dataset())` datasets (as of `r Sys.Date()`).  There are `r nrow(neotoma::get_table("DatasetTypes"))` unique dataset types, and these data products represent the cummulative work of `r nrow(neotoma::get_table("Contacts"))` individuals or organizations.  Access to Neotoma is obtained primarily through three platforms.  The database itself is a PostgreSQL database that is available as snapshots from the Neotoma website -- [http://neotomadb.org]() -- while data search capacity is supported through a map-based web engine, the Neotoma Explorer - [http://apps.neotomadb.org/explorer](), or through the API and associated R package `neotoma` [@goring2015neotoma]. The datasbase itself is described elsewhere [@neotomamanual].
 
-Here we describe the efforts to facilitate the minting and provisioning of DOI names for the Neotoma Database through DataCite/EZID, the steps we have taken to ensure increased discoverability of data, the steps to support ongoing versioning of datasets, and, ultimately, the possibilities that DOIs provide both to Neotoma, to facilitate ongoing database development and evolution, and also to individuals who provide data to Neotoma as part of their data management planning.
+Here we describe the efforts to facilitate the minting and provisioning of DOI names for the Neotoma Database through DataCite, the steps we have taken to ensure increased discoverability of data, the steps to support ongoing versioning of datasets, and, ultimately, the possibilities that DOIs provide both to Neotoma, to facilitate ongoing database development and evolution, and also to individuals who provide data to Neotoma as part of their data management planning.
 
 #Background
 
-In 2016, Neotoma, through the University of Wisconsin Library System obtained authorization to mint DOI names for data contained within the database.  The DOI system originated through a collaboration among three large publishing associations in 1997 [@doihandbook], and, although it was primarily focused on minting unique identifiers for published materials, the vision of DOI names for data came soon afterwards [@paskin2005digital].  While DOI names do not resolve to the data categorically, they provide metadata (supplied in the process of minting a DOI) and a resolution service that facilitates the long term discoverability and sustainability of data generated by researchers.  A review of available object identifiers found that DOIs provide strong support for DOIs, although a clear choice for identifiers remained purpose-specific [@duerr2011utility].
+In 2016, Neotoma, through the University of Wisconsin Library System, obtained authorization to mint DOI names for data contained within the database. The DOI system originated through a collaboration among three large publishing associations in 1997 [@doihandbook], and, although it was primarily focused on minting unique identifiers for published materials, the vision of DOI names for data came soon afterwards [@paskin2005digital].  While DOI names do not resolve to the data categorically, they provide metadata (supplied in the process of minting a DOI) and a resolution service that facilitates the long term discoverability and sustainability of data generated by researchers.  A review of available object identifiers found that DOIs provide strong support for DOIs, although a clear choice for identifiers remained purpose-specific [@duerr2011utility].
 
 In the case of Neotoma the use of DOI names for individual datasets facilitates serveral key objectives:
 
@@ -84,15 +91,17 @@ In the case of Neotoma the use of DOI names for individual datasets facilitates 
 
 # Use Case
 
-This document lays out the outline for establishing DOIs for the database using the EZID API and the DataCite metadata schema as the basis of the process.  We have consulted resources describing best practices in scholarly data citation and data provision [@starr2015achieving; @hourcle2012linking], and have made a significant effort to provide the most accurate and complete metadata record for Neotoma data possible.
+This document lays out the outline for establishing DOIs for the database using the DataCite API and the DataCite metadata schema [REF] as the basis of the process.  We have consulted resources describing best practices in scholarly data citation and data provision [@starr2015achieving; @hourcle2012linking], and have made a significant effort to provide the most accurate and complete metadata record for Neotoma data possible.
 
-Given the database structure [@neotomamanual; http://neotoma-manual.readthedocs.io/en/latest/], there is no single database table that maps directly to the DataCite schema. There is a data construct within the existing Neotoma API `downloads` structure (*e.g.*, [http://api.neotomadb.org/v1/data/downloads/14196]()) that mirrors (to some degree) the concept of a complete dataset.  The `download` object will be the atomic unit for DOI assignment and will be refered to as a "dataset" in this document, although a second Neotoma API service exists that refers to "datasets" [@goring2015neotoma]. The API "dataset" service excludes count or sample data for a site, and as such doesn't serve the needs for the assignment of DOI names since it does not enable complete data archiving.
+Given the database structure [@neotomamanual; http://neotoma-manual.readthedocs.io/en/latest/], there is no single database table that maps directly to the DataCite schema. To help provide best-practices support for data archiving, Neotoma provides a "frozen" data object, which reflects the complete data object at the time of submission, stored as a JSON entry in the Neotoma database.  The frozen data object is required since Neotoma is a "live" database.  Relationships between the dataset object and elements such as taxa, chronologies and publications may change over time as taxonomic standards change, or new chronologies are added for records.  The frozen dataset is the atomic unit for DOI assignment and will be refered to as a "dataset" in this document, although a second Neotoma API service exists that refers to "datasets" [@goring2015neotoma]. The API "dataset" service excludes count or sample data for a site, and as such doesn't serve DOI assignment, since it does not provide the complete set for required metadata.
 
-Neotoma, in establishing a DOI service, had two main use cases.  (1) Pre-existing records, and records that will provided to Neotoma as a set of datasets (either the inclusion of a new Constituent Database, or as the result of a data synthesis project) will require bulk assignment records. (2) New records are uploaded individually through Tilia ([http://tiliait.com]()) or a data upload web service (in development). For each of these two use cases the process is generally the same for the actual call to DataCite/EZID.
+Neotoma, in establishing a DOI service, had two main use cases.  (1) Pre-existing records, and records that will provided to Neotoma as a set of datasets (either the inclusion of a new Constituent Database, or as the result of a data synthesis project) will require bulk assignment records. (2) New records are uploaded individually through Tilia ([http://tiliait.com]()) or a data upload web service (in development). For each of these two use cases the process is generally the same for the actual call to DataCite.
 
 In each case the process for minting DOIs and providing suitable, searchable metadata is as follows:
 
-  * Discover data with an empty dataset DOI field
+  * Discover data for which DOIs have been minted (DataCite API search)
+  * Freeze data uploaded to Neotoma that has not been "frozen"
+  *
   * The script generates an XML document that conforms to the DataCite 3.1 XML Schema
   * On success, the script calls out to DataCite/EZID & generates a DOI and assigns metadata
   * On success, a landing page is created programmatically
@@ -131,52 +140,57 @@ To first generate the XML document, we use namespace definitions and the schema 
 ds_id <- 1001
 
 # Generating the new XML framework and associated namespaces:
-doc <- newXMLDoc()
+  doc <- XML::newXMLDoc()
 
-root <- newXMLNode('resource', 
-                   namespaceDefinitions = c("http://datacite.org/schema/kernel-3",
-                             "xsi" = "http://www.w3.org/2001/XMLSchema-instance"),
-                   attrs = c("xsi:schemaLocation" = "http://datacite.org/schema/kernel-3 http://schema.datacite.org/meta/kernel-3/metadata.xsd"), 
-                   doc = doc)
+  root <- XML::newXMLNode("resource",
+                          namespaceDefinitions = c("http://datacite.org/schema/kernel-4",
+                                                   "xsi" = "http://www.w3.org/2001/XMLSchema-instance",
+                                                   "xml" = "http://www.w3.org/XML/1998/namespace"),
+                          attrs = c("xsi:schemaLocation" = "http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd"),
+                          doc = doc)
+
+  XML::newXMLNode("version", "1.0", parent = root)
+
+
 
 ```
 
 ##Assigning Metadata Tags
 
-We structure this paper in the same order as the [DataCite Schema Documentation](https://schema.datacite.org/meta/kernel-3/doc/DataCite-MetadataKernel_v3.1.pdf). SQL queries to Neotoma have been wrapped within R functions that use dataset number (`1001` here) as the key parameter (Supplement One).
+We structure this paper in the same order as the [DataCite Schema Documentation](https://schema.datacite.org/meta/kernel-3/doc/DataCite-MetadataKernel_v3.1.pdf). SQL queries to Neotoma have been wrapped within R functions that use dataset number (`1001` here) as the key parameter (Supplement One).  Within Neotoma there is a process that stores submitted datasets as "frozen" objects in JSON format upon submission.  This ensure that, even though Neotoma is a living database where elements like taxonomic names may change, the database also maintains a record of the dataset as it was in its original format.  This record can be obtained using the Neotoma API.
 
 ##Identifier
 
 The `identifier` links directly to the dataset's Landing Page.  The generation of the landing page is covered elsewhere.
 
 ```{r, results = 'hide', message = FALSE, warning = FALSE, eval=TRUE}
-default <- sqlQuery(con, query = default_call(ds_id))
-
-# Clean the affiliation:
-default$affiliation <- gsub('\r\n', ', ', default$affiliation)
 
 # This is the empty shoulder for assigning DOIs:
-newXMLNode("identifier", '10.5072/FK2', 
-           attrs = c('identifierType' = 'DOI'), parent = root)
+
+XML::newXMLNode("identifier",
+                attrs = list("identifierType" = "DOI"),
+                parent = root)
 
 ```
 
 ###Creators:
 
-While affiliated researchers occur futher in the list, we use the `datasetpi` field from the Neotoma Database to assign the Creator field.  While the majority of datasets have only a single assigned PI, there are `r sum(table(sqlQuery(con, query = "SELECT DatasetID FROM datasetpis"))>1)` datasets with multiple creators.  The Dataset PI is the individual (or individuals) who are cited in the data citation.
+While affiliated researchers occur futher in the list, we use the `datasetpi` field from the Neotoma Database to assign the Creator field.  The Neotoma API provides an endpoint to obtain all dataset authors for a given dataset. While the majority of datasets have only a single assigned PI, there are `r sum(table(dbGetQuery(conn = con, "SELECT datasetid FROM ndb.datasetpis"))>1)` datasets (of `r dbGetQuery(conn = con, "SELECT COUNT(DISTINCT datasetid) FROM ndb.datasetpis"))` total datasets) with multiple creators.  The Dataset PI is the individual (or individuals) who are cited in the data citation.
 
 ```{r, results = 'hide', message = FALSE, warning = FALSE, eval=runner}
-newXMLNode("creators", parent = root)
+  XML::newXMLNode("creators", parent = root)
 
-lapply(1:nrow(default),
-       function(x) {
-         addChildren(root[["creators"]], newXMLNode("creator",
-                    .children = list(newXMLNode("creatorName",
-                                                default$creatorName[x]),
-                                     newXMLNode("affiliation",
-                                                default$affiliation[x]))))
-        })
-
+  lapply(contact,
+         function(x) {
+           if(length(x) > 0) {
+             XML::addChildren(root[["creators"]],
+                              XML::newXMLNode("creator",
+                        .children = list(XML::newXMLNode("creatorName",
+                                                    x$fullName),
+                                         XML::newXMLNode("affiliation",
+                                                    gsub(pattern = "\r\n", ", ", x$address)))))
+           }
+          })
 ```
 
 ###Titles
@@ -184,11 +198,15 @@ lapply(1:nrow(default),
 The title is a synthetic object, produced by combining the site name and the data type.  In this case, we generate the name `r default$SiteName[1]`.
 
 ```{r, results = 'hide', message = FALSE, warning = FALSE, eval=runner}
-newXMLNode("titles", parent = root)
-newXMLNode("title", 
-           default$SiteName[1],
-           attrs = c("xml:lang" = "en-us"),
-           parent = root[["titles"]])
+title <- paste0(frozen$frozendata$data$dataset$site$sitename, " ",
+                frozen$frozendata$data$dataset$dataset$datasettype,
+                " dataset")
+
+XML::newXMLNode("titles", parent = root)
+XML::newXMLNode("title",
+                title,
+                attrs = c("xml:lang" = "en-us"),
+                parent = root[["titles"]])
 
 ```
 
@@ -205,16 +223,16 @@ newXMLNode("publicationYear", format(Sys.Date(), "%Y"), parent = root)
 
 ###Subject
 
-The Subject and Subject Scheme information is critical for metadata discovery, but while DataCite requests the use of existing subject schemes, some research in the library sciences cautions against the use of formal subject schemes, given that modern web searching has not formally adopted the structured schemes used in library classification schemes.  
+The Subject and Subject Scheme information is critical for metadata discovery, but while DataCite requests the use of existing subject schemes, some research in the library sciences cautions against the use of formal subject schemes, given that modern web searching has not formally adopted the structured schemes used in library classification schemes.
 
 <-- I've created a document [here](https://docs.google.com/document/d/1wcR6WWAV3COD_MeOgaOEqtpJ3bbe1nxF9omnmmlEA5Q/edit?usp=sharing) that discusses it in more detail..  For now I will assign everything "Paleoecology". -->
 
 ```{r, results = 'hide', message = FALSE, warning = FALSE, eval=runner}
 
-newXMLNode("subjects", newXMLNode("subject", 
+newXMLNode("subjects", newXMLNode("subject",
                                   "Paleoecology",
                                   attrs = c("subjectScheme" = "Library of Congress",
-                                            "schemeURI" = "http://id.loc.gov/authorities/subjects")), 
+                                            "schemeURI" = "http://id.loc.gov/authorities/subjects")),
            parent = root)
 
 ```
@@ -234,13 +252,13 @@ knitr::kable(contacts)
 
 ```{r, results='hide', eval=runner}
 
-# The contributors come from the DB call.  This duplicates 
+# The contributors come from the DB call.  This duplicates
 newXMLNode("contributors", parent = root)
-lapply(1:nrow(contacts), 
-       function(x) { 
-         newXMLNode("contributor", 
+lapply(1:nrow(contacts),
+       function(x) {
+         newXMLNode("contributor",
                     attrs = c("contributorType" = contacts$contributorType[x]),
-                    .children = list(newXMLNode("contributorName", 
+                    .children = list(newXMLNode("contributorName",
                                                 contacts$creatorName[x])), parent = root[["contributors"]])
          })
 ```
@@ -258,12 +276,12 @@ knitr::kable(dates)
 # Adding the dates in one at a time, we use the lapply to insert them
 # into the `dates` node.
 newXMLNode("dates", parent = root)
-lapply(1:nrow(dates), 
-       function(x) { 
-         newXMLNode("date", 
-                    format(as.Date(dates[1,1]), "%Y-%m-%d"), 
-                           attrs = c("dateType" = dates[x,2]), 
-                    parent = root[["dates"]]) 
+lapply(1:nrow(dates),
+       function(x) {
+         newXMLNode("date",
+                    format(as.Date(dates[1,1]), "%Y-%m-%d"),
+                           attrs = c("dateType" = dates[x,2]),
+                    parent = root[["dates"]])
          } )
 
 ```
@@ -277,7 +295,7 @@ All data are assigned the default resource type `"Dataset/Paleoecological Sample
 ```{r, echo = TRUE, results='hide', eval=runner}
 newXMLNode("language", "English", parent = root)
 
-newXMLNode("resourceType", "Dataset/Paleoecological Sample Data", 
+newXMLNode("resourceType", "Dataset/Paleoecological Sample Data",
            attrs = c("resourceTypeGeneral" = "Dataset"), parent = root)
 ```
 
@@ -352,7 +370,7 @@ The Neotoma Database provides a User Agreement for the database and constituent 
 # Number 16
 
 addChildren(newXMLNode("rightsList", parent = root),
-           children = newXMLNode("rights", "CC-BY4", 
+           children = newXMLNode("rights", "CC-BY4",
            attrs = c("rightsURI" = "http://creativecommons.org/licenses/by/4.0/deed.en_US")))
 
 ```
@@ -362,12 +380,12 @@ addChildren(newXMLNode("rightsList", parent = root),
 `Description` and `DescriptionType` are described as critical resources in the DataCite metadata schema.  Currently the Neotoma Database lacks the ability to link the publication abstract into the metadata schema.  As such we generate a synthetic dataset description that includes the site name and dataset type.
 
 ```{r, results = 'hide', message = FALSE, warning = FALSE, eval=runner}
-newXMLNode("Description", 
-           paste0("Raw data for the ", 
-                  default$SiteName, 
+newXMLNode("Description",
+           paste0("Raw data for the ",
+                  default$SiteName,
                   " obtained from the Neotoma Paleoecological Database."),
            parent = root)
-newXMLNode("descriptionType", 
+newXMLNode("descriptionType",
            "Abstract", parent  = root[["Description"]])
 
 ```
@@ -380,7 +398,7 @@ The `geoLocation` is defined as the four element bounding box.  In cases where t
 loc <- sqlQuery(con, query = geoloc_call(1001))
 
 newXMLNode("geoLocations", parent = root)
-newXMLNode("geoLocation", 
+newXMLNode("geoLocation",
            newXMLNode("geoLocationBox", loc, parent = root),
            parent = root[["geoLocations"]])
 
@@ -400,19 +418,19 @@ urlbase = 'https://ezid.cdlib.org/'
 
 # We need to clean up the XML formatting, removing hard returns and changing quotes:
 parse_doc <- gsub('\\n', '', paste0('datacite: ',
-                         saveXML(xmlParse(paste0('data/datasets/', 
+                         saveXML(xmlParse(paste0('data/datasets/',
                                                  ds_id, '_output.xml')))))
 parse_doc <- gsub('\\"', "'", parse_doc)
 
-r = POST(url = paste0(urlbase, 'shoulder/doi:10.5072/FK2'), 
+r = POST(url = paste0(urlbase, 'shoulder/doi:10.5072/FK2'),
 	       authenticate(user = 'apitest', password = 'apitest'),
          add_headers(c('Content-Type' = 'text/plain; charset=UTF-8',
                        'Accept' = 'text/plain')),
 	       body = parse_doc,
 	                   format = 'xml')
 
-out_doi <- substr(content(r), 
-                  regexpr("doi:", content(r)), 
+out_doi <- substr(content(r),
+                  regexpr("doi:", content(r)),
                   regexpr("\\s\\|", content(r)) - 1)
 ```
 
@@ -432,16 +450,16 @@ In cases where a data set is updated, Neotoma still directly modifies the record
 
 xmlValue(root[["identifier"]]) <- out_doi
 
-saveXML(doc = doc, 
+saveXML(doc = doc,
         file = paste0('data/datasets/', ds_id, '_output.xml'),
         prefix = '<?xml version="1.0" encoding="UTF-8"?>')
 ```
 ```
-r = POST(url = paste0(urlbase, paste0('identifier/', out_doi)), 
+r = POST(url = paste0(urlbase, paste0('identifier/', out_doi)),
 	       authenticate(user = XXXXXXX, password = XXXXXXXX),
          add_headers(c('Content-Type' = 'text/plain; charset=UTF-8',
                        'Accept' = 'text/plain')),
-	       body = paste0('datacite: ',paste(readLines(paste0('data/datasets/', 
+	       body = paste0('datacite: ',paste(readLines(paste0('data/datasets/',
                 ds_id,  '_output.xml')), collapse = " ")),
 	                   format = 'xml')
 content(r)
