@@ -1,3 +1,7 @@
+[![lifecycle](https://img.shields.io/badge/lifecycle-stable-orange.svg)](https://www.tidyverse.org/lifecycle/#stable)
+
+
+
 # AssignDOIs
 
 This repository serves two purposes:  It is the code that will run to assign DOIs to Neotoma datasets through DataCite (mostly in the `R/builder` folder) and it is also the paper that describes this process.
